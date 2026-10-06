@@ -1,0 +1,29 @@
+---
+import { getCollection, render } from 'astro:content';
+import PostLayout from '../../../layouts/PostLayout.astro';
+import { localePath, otherLang, type Lang } from '../../../i18n/ui';
+import { splitId, readingMinutes } from '../../../lib';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts', (p) => !p.data.draft || import.meta.env.DEV);
+  const ids = new Set(posts.map((p) => p.id));
+  return posts.map((post) => {
+    const { lang, slug } = splitId(post.id);
+    const other = otherLang(lang);
+    return {
+      params: { lang, slug },
+      props: {
+        post,
+        translationHref: ids.has(`${other}/${slug}`) ? localePath(other, `/blog/${slug}`) : undefined,
+      },
+    };
+  });
+}
+
+const { post, translationHref } = Astro.props;
+const lang = Astro.params.lang as Lang;
+const { Content, headings } = await render(post);
+---
+<PostLayout post={post} lang={lang} minutes={readingMinutes(post.body)} headings={headings} translationHref={translationHref}>
+  <Content />
+</PostLayout>

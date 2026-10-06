@@ -1,0 +1,37 @@
+---
+import { examTips } from '../../data/learning-how-to-learn';
+import type { Lang } from '../../i18n/ui';
+interface Props { lang: Lang; label?: string }
+const { lang, label } = Astro.props;
+const icons: Record<string, string> = {
+  jump: '<path d="M6 30c6-14 14-18 26-14" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><path d="M26 10l7 6-7 6" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>',
+  heart: '<path d="M20 34S5 25 5 15a7.5 7.5 0 0 1 15-2 7.5 7.5 0 0 1 15 2c0 10-15 19-15 19Z" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/>',
+  eye: '<path d="M3 20s6-11 17-11 17 11 17 11-6 11-17 11S3 20 3 20Z" fill="none" stroke="currentColor" stroke-width="3.5"/><circle cx="20" cy="20" r="5" fill="currentColor"/>',
+};
+---
+<div class="tips">
+  {label && <span class="widget-label">{label}</span>}
+  <div class="grid">
+    {examTips.map((tip, i) => (
+      <details class="tip" open={i === 0}>
+        <summary>
+          <svg viewBox="0 0 40 40" width="36" height="36" aria-hidden="true" set:html={icons[tip.icon]} />
+          <span>{tip.title[lang]}</span>
+        </summary>
+        <p>{tip.body[lang]}</p>
+      </details>
+    ))}
+  </div>
+</div>
+<style>
+  .tips { margin: 2rem 0; }
+  .grid { display: grid; gap: 0.8rem; }
+  .tip { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1.1rem; }
+  .tip[open] { border-color: var(--accent); }
+  summary { display: flex; align-items: center; gap: 0.8rem; cursor: pointer; font-weight: 700; font-size: 1.05rem; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; margin-left: auto; font-size: 1.4rem; color: var(--text-soft); }
+  .tip[open] summary::after { content: '–'; }
+  summary svg { color: var(--warm); flex: none; }
+  .tip p { margin: 0.6rem 0 0.2rem 3rem; color: var(--text-soft); }
+</style>

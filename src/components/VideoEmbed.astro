@@ -1,0 +1,41 @@
+---
+/** Lightweight YouTube embed: shows a thumbnail, loads the player only on click. */
+interface Props { id: string; title: string; start?: number; caption?: string; note?: string }
+const { id, title, start = 0, caption, note } = Astro.props;
+const src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0${start ? `&start=${start}` : ''}`;
+---
+<figure class="video">
+  <button class="facade" type="button" data-video={src} aria-label={`Play: ${title}`}>
+    <img src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" loading="lazy" width="480" height="360" onerror="this.style.visibility='hidden'" />
+    <span class="play" aria-hidden="true">
+      <svg viewBox="0 0 68 48" width="68" height="48"><path d="M66.5 7.7a8.5 8.5 0 0 0-6-6C55.2.3 34 .3 34 .3s-21.2 0-26.5 1.4a8.5 8.5 0 0 0-6 6C.1 13 .1 24 .1 24s0 11 1.4 16.3a8.5 8.5 0 0 0 6 6C12.8 47.7 34 47.7 34 47.7s21.2 0 26.5-1.4a8.5 8.5 0 0 0 6-6C67.9 35 67.9 24 67.9 24s0-11-1.4-16.3Z" fill="#e53935"/><path d="M45 24 27 14v20" fill="#fff"/></svg>
+    </span>
+    <span class="title">{title}</span>
+  </button>
+  {(caption || note) && <figcaption>{caption}{note && <span class="note"> {note}</span>}</figcaption>}
+</figure>
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-video]').forEach((b) =>
+    b.addEventListener('click', () => {
+      const f = document.createElement('iframe');
+      f.src = b.dataset.video!; f.title = b.getAttribute('aria-label') || 'video';
+      f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      f.allowFullscreen = true; f.className = 'player';
+      b.replaceWith(f);
+    }, { once: true }));
+</script>
+<style>
+  .video { margin: 2rem 0; }
+  .facade, .video :global(.player) {
+    position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; padding: 0;
+    border-radius: var(--radius); overflow: hidden; background: #000; cursor: pointer; box-shadow: var(--shadow);
+  }
+  .facade img { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; transition: opacity 0.2s ease; }
+  .facade:hover img { opacity: 1; }
+  .play { position: absolute; inset: 0; display: grid; place-items: center; }
+  .title {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 2rem 1rem 0.8rem; text-align: left;
+    color: #fff; font-weight: 600; background: linear-gradient(transparent, rgb(0 0 0 / 0.75)); font-family: var(--font-body);
+  }
+  .note { font-style: italic; }
+</style>

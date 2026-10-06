@@ -1,0 +1,54 @@
+---
+import type { Lang } from '../../i18n/ui';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = {
+  en: {
+    label: 'Quick check-in', sleep: 'Hours of sleep last night', move: 'Minutes of exercise this week', h: 'h', m: 'min',
+    sleepLow: 'Try going to bed 30 minutes earlier this week. Your memory will thank you.',
+    sleepOk: 'Great — that is enough sleep for your brain to store what you learned.',
+    moveLow: 'Even a 20-minute walk a few times a week helps. Try one after dinner.',
+    moveOk: 'Nice! Keep moving — it helps your memory, not just your body.',
+  },
+  vi: {
+    label: 'Tự kiểm tra nhanh', sleep: 'Số giờ ngủ đêm qua', move: 'Số phút vận động tuần này', h: 'giờ', m: 'phút',
+    sleepLow: 'Tuần này thử đi ngủ sớm hơn 30 phút nhé. Trí nhớ của em sẽ cảm ơn em.',
+    sleepOk: 'Tuyệt — vậy là đủ ngủ để não lưu lại những gì em đã học.',
+    moveLow: 'Chỉ cần đi bộ 20 phút vài lần một tuần cũng có ích. Thử đi sau bữa tối xem.',
+    moveOk: 'Tốt lắm! Cứ tiếp tục vận động — nó giúp cả trí nhớ chứ không chỉ cơ thể.',
+  },
+}[lang];
+---
+<div class="widget sleep" data-sleep data-strings={JSON.stringify(s)}>
+  <span class="widget-label">{s.label}</span>
+  <label>{s.sleep}: <strong data-sv>7 {s.h}</strong>
+    <input type="range" min="3" max="11" step="0.5" value="7" data-s />
+  </label>
+  <p class="fb" data-sf></p>
+  <label>{s.move}: <strong data-mv>60 {s.m}</strong>
+    <input type="range" min="0" max="300" step="10" value="60" data-m />
+  </label>
+  <p class="fb" data-mf></p>
+</div>
+<script>
+  document.querySelectorAll<HTMLElement>('[data-sleep]').forEach((root) => {
+    const s = JSON.parse(root.dataset.strings || '{}');
+    const q = <T extends HTMLElement>(x: string) => root.querySelector<T>(x)!;
+    const sl = q<HTMLInputElement>('[data-s]'), ml = q<HTMLInputElement>('[data-m]');
+    const upd = () => {
+      const h = Number(sl.value), m = Number(ml.value);
+      q('[data-sv]').textContent = `${h} ${s.h}`; q('[data-mv]').textContent = `${m} ${s.m}`;
+      const sf = q('[data-sf]'), mf = q('[data-mf]');
+      sf.textContent = h < 7 ? s.sleepLow : s.sleepOk; sf.className = 'fb ' + (h < 7 ? 'low' : 'ok');
+      mf.textContent = m < 90 ? s.moveLow : s.moveOk; mf.className = 'fb ' + (m < 90 ? 'low' : 'ok');
+    };
+    sl.addEventListener('input', upd); ml.addEventListener('input', upd); upd();
+  });
+</script>
+<style>
+  label { display: block; font-weight: 600; margin-top: 0.6rem; }
+  input[type='range'] { width: 100%; accent-color: var(--accent); margin-top: 0.5rem; height: 28px; }
+  .fb { margin: 0.2rem 0 0.8rem; padding: 0.6rem 0.9rem; border-radius: 10px; font-size: 0.95rem; }
+  .fb.low { background: var(--warm-soft); }
+  .fb.ok { background: var(--accent-soft); }
+</style>

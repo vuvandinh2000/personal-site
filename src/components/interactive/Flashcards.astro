@@ -1,0 +1,97 @@
+---
+import { flashcards } from '../../data/learning-how-to-learn';
+import { useTranslations, type Lang } from '../../i18n/ui';
+interface Props { lang: Lang; title?: string }
+const { lang, title } = Astro.props;
+const t = useTranslations(lang);
+const s = {
+  en: { label: 'Active recall', done: 'You knew {n} of {total}. Cards marked "Not yet" are the ones to review tomorrow.', of: 'of' },
+  vi: { label: 'Tự nhớ lại', done: 'Em nhớ được {n} trên {total} thẻ. Những thẻ "Chưa nhớ" là thẻ cần ôn lại vào ngày mai.', of: 'trên' },
+}[lang];
+---
+<div class="widget flash" data-flash data-done={s.done}>
+  <span class="widget-label">{s.label}</span>
+  {title && <h3>{title}</h3>}
+  <div class="progress"><span data-pos>1</span> {s.of} {flashcards.length}</div>
+  <div class="stack">
+    {
+      flashcards.map((c, i) => (
+        <button class="card" type="button" data-card hidden={i !== 0} aria-label={t('ui.flip')}>
+          <span class="inner">
+            <span class="face front">
+              <span class="q">{c.q[lang]}</span>
+              <span class="hint">↻ {t('ui.flip')}</span>
+            </span>
+            <span class="face back">{c.a[lang]}</span>
+          </span>
+        </button>
+      ))
+    }
+    <div class="summary" data-summary hidden>
+      <p data-summary-text></p>
+      <button class="btn" type="button" data-restart>↺ {t('ui.tryAgain')}</button>
+    </div>
+  </div>
+  <div class="row grade" data-grade>
+    <button class="btn" type="button" data-no disabled>{t('ui.notYet')}</button>
+    <button class="btn btn-primary" type="button" data-yes disabled>✓ {t('ui.knewIt')}</button>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-flash]').forEach((root) => {
+    const cards = [...root.querySelectorAll<HTMLButtonElement>('[data-card]')];
+    const pos = root.querySelector('[data-pos]')!, grade = root.querySelector<HTMLElement>('[data-grade]')!;
+    const yes = root.querySelector<HTMLButtonElement>('[data-yes]')!, no = root.querySelector<HTMLButtonElement>('[data-no]')!;
+    const summary = root.querySelector<HTMLElement>('[data-summary]')!;
+    let i = 0, known = 0;
+    const show = () => {
+      cards.forEach((c, k) => { c.hidden = k !== i; c.classList.remove('flipped'); });
+      pos.textContent = String(Math.min(i + 1, cards.length));
+      yes.disabled = no.disabled = true;
+    };
+    cards.forEach((c) => c.addEventListener('click', () => {
+      c.classList.toggle('flipped'); yes.disabled = no.disabled = false;
+    }));
+    const next = (ok: boolean) => {
+      if (ok) known++;
+      i++;
+      if (i >= cards.length) {
+        cards.forEach((c) => (c.hidden = true)); grade.hidden = true; summary.hidden = false;
+        root.querySelector('[data-summary-text]')!.textContent = (root.dataset.done || '')
+          .replace('{n}', String(known)).replace('{total}', String(cards.length));
+      } else show();
+    };
+    yes.addEventListener('click', () => next(true));
+    no.addEventListener('click', () => next(false));
+    root.querySelector('[data-restart]')!.addEventListener('click', () => {
+      i = 0; known = 0; summary.hidden = true; grade.hidden = false; show();
+    });
+  });
+</script>
+
+<style>
+  .progress { font-size: 0.85rem; color: var(--text-soft); margin-bottom: 0.6rem; font-weight: 600; }
+  .stack { perspective: 1200px; }
+  .card {
+    display: block; width: 100%; min-height: 220px; padding: 0; border: 0; background: none;
+    cursor: pointer; font: inherit; color: inherit; text-align: center;
+  }
+  .inner {
+    position: relative; display: block; width: 100%; min-height: 220px;
+    transition: transform 0.5s cubic-bezier(0.3, 0.7, 0.3, 1); transform-style: preserve-3d;
+  }
+  .card.flipped .inner { transform: rotateY(180deg); }
+  .face {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.8rem; padding: 1.5rem; border-radius: 16px; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    font-size: 1.2rem; line-height: 1.5;
+  }
+  .front { background: var(--accent-soft); border: 2px solid var(--accent); }
+  .q { font-family: var(--font-head); font-size: 1.35rem; font-weight: 600; }
+  .hint { font-size: 0.85rem; color: var(--text-soft); }
+  .back { background: var(--warm-soft); border: 2px solid var(--warm); transform: rotateY(180deg); }
+  .grade { justify-content: center; margin-top: 1rem; }
+  .summary { min-height: 220px; display: grid; place-items: center; text-align: center; gap: 0.5rem; padding: 1rem; background: var(--bg-soft); border-radius: 16px; }
+  .summary p { font-size: 1.15rem; font-weight: 500; max-width: 40ch; }
+</style>

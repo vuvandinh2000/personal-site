@@ -1,0 +1,131 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { langs, useTranslations, localePath, type Lang } from '../../i18n/ui';
+import { getPosts } from '../../lib';
+
+export function getStaticPaths() {
+  return langs.map((lang) => ({ params: { lang } }));
+}
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+const posts = await getPosts(lang);
+const latest = posts.slice(0, 4);
+const mentoringCount = posts.filter((p) => p.data.series === 'mentoring').length;
+---
+<BaseLayout lang={lang}>
+  <section class="hero container">
+    <div class="intro">
+      <h1>{t('home.hello')}</h1>
+      <p class="lead">{t('home.intro')}</p>
+    </div>
+    <svg class="art" viewBox="0 0 220 180" aria-hidden="true">
+      <circle cx="110" cy="92" r="78" fill="var(--accent-soft)" />
+      <rect x="58" y="62" width="104" height="70" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="3" />
+      <path d="M72 82h40M72 96h60M72 110h30" stroke="var(--text-soft)" stroke-width="4" stroke-linecap="round" />
+      <path d="M128 106l10 10 18-22" fill="none" stroke="var(--warm)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="170" cy="40" r="10" fill="var(--warm)" />
+      <circle cx="44" cy="146" r="6" fill="var(--accent)" />
+    </svg>
+  </section>
+
+  <section class="container">
+    <h2>{t('home.series')}</h2>
+    <a class="series" href={localePath(lang, '/series/mentoring')}>
+      <div>
+        <h3>{t('series.mentoring.title')}</h3>
+        <p>{t('series.mentoring.description')}</p>
+      </div>
+      <span class="count">{mentoringCount}</span>
+    </a>
+  </section>
+
+  <section class="container">
+    <div class="head">
+      <h2>{t('home.latest')}</h2>
+      <a href={localePath(lang, '/blog')}>{t('home.allPosts')}</a>
+    </div>
+    <div class="grid">
+      {latest.map((post) => <PostCard post={post} lang={lang} />)}
+    </div>
+  </section>
+</BaseLayout>
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    align-items: center;
+    gap: 2rem;
+    padding-block: clamp(2.5rem, 7vw, 5rem);
+  }
+  h1 {
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    margin: 0 0 1rem;
+  }
+  .lead {
+    font-size: 1.2rem;
+    color: var(--text-soft);
+    max-width: 38ch;
+    margin: 0;
+  }
+  .art {
+    width: 100%;
+    max-width: 300px;
+    justify-self: center;
+  }
+  section + section {
+    margin-top: 2.5rem;
+  }
+  .head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  .series {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.4rem 1.5rem;
+    border-radius: var(--radius);
+    background: var(--accent-soft);
+    color: var(--text);
+    text-decoration: none;
+    border: 1px solid transparent;
+  }
+  .series:hover {
+    border-color: var(--accent);
+  }
+  .series h3 {
+    margin: 0 0 0.3rem;
+  }
+  .series p {
+    margin: 0;
+    color: var(--text-soft);
+  }
+  .count {
+    display: grid;
+    place-items: center;
+    min-width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 700;
+    font-size: 1.2rem;
+  }
+  @media (max-width: 700px) {
+    .hero {
+      grid-template-columns: 1fr;
+    }
+    .art {
+      display: none;
+    }
+  }
+</style>

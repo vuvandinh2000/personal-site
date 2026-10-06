@@ -1,0 +1,107 @@
+---
+import type { Lang } from '../../i18n/ui';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = {
+  en: {
+    label: 'Make your plan',
+    title: 'Your spaced review schedule',
+    what: 'What did you learn?',
+    whatPh: 'e.g. Physics – Chapter 2: Waves',
+    when: 'When did you learn it?',
+    make: 'Make my schedule',
+    ics: 'Add to calendar (.ics)',
+    review: 'Review',
+    eventTitle: 'Review',
+    eventDesc: 'Close the book. Write down what you remember. Then check.',
+  },
+  vi: {
+    label: 'Lên kế hoạch',
+    title: 'Lịch ôn ngắt quãng của em',
+    what: 'Em vừa học gì?',
+    whatPh: 'VD: Vật lý – Chương 2: Sóng cơ',
+    when: 'Em học vào ngày nào?',
+    make: 'Tạo lịch ôn',
+    ics: 'Thêm vào lịch (.ics)',
+    review: 'Ôn lần',
+    eventTitle: 'Ôn bài',
+    eventDesc: 'Gập sách lại. Viết ra những gì em nhớ. Rồi kiểm tra.',
+  },
+}[lang];
+---
+<div class="widget sched" data-sched data-lang={lang} data-strings={JSON.stringify(s)}>
+  <span class="widget-label">{s.label}</span>
+  <h3>{s.title}</h3>
+  <div class="form">
+    <label>{s.what}<input type="text" data-topic placeholder={s.whatPh} /></label>
+    <label>{s.when}<input type="date" data-date /></label>
+  </div>
+  <div class="row"><button class="btn btn-primary" type="button" data-make>{s.make}</button></div>
+  <ol class="list" data-list hidden></ol>
+  <div class="row" data-ics-row hidden><button class="btn" type="button" data-ics>📅 {s.ics}</button></div>
+</div>
+
+<script>
+  const OFFSETS = [1, 3, 7, 14];
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const ymd = (d: Date) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  document.querySelectorAll<HTMLElement>('[data-sched]').forEach((root) => {
+    const s = JSON.parse(root.dataset.strings || '{}');
+    const locale = root.dataset.lang === 'vi' ? 'vi-VN' : 'en-GB';
+    const date = root.querySelector<HTMLInputElement>('[data-date]')!;
+    const topic = root.querySelector<HTMLInputElement>('[data-topic]')!;
+    const list = root.querySelector<HTMLOListElement>('[data-list]')!;
+    const icsRow = root.querySelector<HTMLElement>('[data-ics-row]')!;
+    const today = new Date();
+    date.value = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+    let dates: Date[] = [];
+    root.querySelector('[data-make]')!.addEventListener('click', () => {
+      const [y, m, d] = date.value.split('-').map(Number);
+      if (!y) return;
+      dates = OFFSETS.map((o) => new Date(y, m - 1, d + o));
+      list.replaceChildren(...dates.map((dt, i) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="n">${s.review} ${i + 1}</span><span class="d"></span><span class="o">+${OFFSETS[i]}</span>`;
+        li.querySelector('.d')!.textContent = dt.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
+        return li;
+      }));
+      list.hidden = false; icsRow.hidden = false;
+    });
+    root.querySelector('[data-ics]')!.addEventListener('click', () => {
+      const name = (topic.value.trim() || '').replace(/[,;\\]/g, ' ');
+      const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      const events = dates.map((dt, i) => [
+        'BEGIN:VEVENT',
+        `UID:${ymd(dt)}-${i}-${Math.random().toString(36).slice(2)}@personal-site`,
+        `DTSTAMP:${stamp}`,
+        `DTSTART;VALUE=DATE:${ymd(dt)}`,
+        `SUMMARY:${s.eventTitle} ${i + 1}/4${name ? ': ' + name : ''}`,
+        `DESCRIPTION:${s.eventDesc}`,
+        'BEGIN:VALARM', 'TRIGGER:PT19H', 'ACTION:DISPLAY', `DESCRIPTION:${s.eventTitle}`, 'END:VALARM',
+        'END:VEVENT',
+      ].join('\r\n'));
+      const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//personal-site//review//EN', ...events, 'END:VCALENDAR'].join('\r\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+      a.download = 'review-schedule.ics';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    });
+  });
+</script>
+
+<style>
+  .form { display: grid; grid-template-columns: 2fr 1fr; gap: 0.8rem; margin-bottom: 1rem; }
+  label { display: grid; gap: 0.3rem; font-weight: 600; font-size: 0.9rem; }
+  input {
+    font: inherit; font-weight: 400; padding: 0.6rem 0.8rem; border-radius: 10px;
+    border: 1.5px solid var(--border); background: var(--bg); color: var(--text); min-height: 44px;
+  }
+  input:focus { border-color: var(--accent); outline: none; }
+  .list { list-style: none; padding: 0; margin: 1rem 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.6rem; }
+  .list :global(li) { display: grid; gap: 0.1rem; padding: 0.8rem 1rem; border-radius: 12px; background: var(--accent-soft); }
+  .list :global(.n) { font-size: 0.8rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; }
+  .list :global(.d) { font-weight: 600; font-size: 1.05rem; }
+  .list :global(.o) { font-size: 0.8rem; color: var(--text-soft); }
+  @media (max-width: 560px) { .form { grid-template-columns: 1fr; } }
+</style>

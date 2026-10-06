@@ -1,0 +1,201 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import { useTranslations, formatDate, localePath, otherLang, type Lang, type UIKey } from '../i18n/ui';
+import type { Post } from '../lib';
+
+interface Props {
+  post: Post;
+  lang: Lang;
+  minutes: number;
+  headings: { depth: number; slug: string; text: string }[];
+  translationHref?: string;
+}
+const { post, lang, minutes, headings, translationHref } = Astro.props;
+const t = useTranslations(lang);
+const { title, description, date, series, kicker } = post.data;
+const toc = headings.filter((h) => h.depth === 2);
+---
+<BaseLayout lang={lang} title={title} description={description} altHref={translationHref ?? localePath(otherLang(lang))}>
+  <article class="post">
+    <header class="post-head container-narrow">
+      {
+        series && (
+          <a class="series-link" href={localePath(lang, `/series/${series}`)}>
+            {t(`series.${series}.title` as UIKey)}
+            {kicker && <> · {kicker}</>}
+          </a>
+        )
+      }
+      <h1>{title}</h1>
+      <p class="desc">{description}</p>
+      <div class="meta">
+        <time datetime={date.toISOString()}>{formatDate(date, lang)}</time>
+        <span>·</span>
+        <span>{minutes} {t('post.minRead')}</span>
+        {
+          translationHref && (
+            <>
+              <span>·</span>
+              <a href={translationHref} hreflang={otherLang(lang)} data-lang-switch={otherLang(lang)}>
+                {t('post.translation')}
+              </a>
+            </>
+          )
+        }
+      </div>
+    </header>
+
+    {
+      toc.length > 2 && (
+        <nav class="toc container-narrow" aria-label={t('post.toc')}>
+          <details>
+            <summary>{t('post.toc')}</summary>
+            <ol>
+              {toc.map((h) => (
+                <li>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ol>
+          </details>
+        </nav>
+      )
+    }
+
+    <div class="prose container-narrow">
+      <slot />
+    </div>
+  </article>
+</BaseLayout>
+
+<script>
+  document.querySelectorAll<HTMLAnchorElement>('[data-lang-switch]').forEach((a) =>
+    a.addEventListener('click', () => {
+      try { localStorage.setItem('lang', a.dataset.langSwitch || 'en'); } catch {}
+    }),
+  );
+</script>
+
+<style>
+  .post-head {
+    padding-top: clamp(2rem, 6vw, 3.5rem);
+    padding-bottom: 1.5rem;
+  }
+  .series-link {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--warm);
+    text-decoration: none;
+    margin-bottom: 0.6rem;
+  }
+  h1 {
+    font-size: clamp(2.1rem, 5.5vw, 3.2rem);
+    margin: 0 0 0.75rem;
+  }
+  .desc {
+    font-size: 1.2rem;
+    color: var(--text-soft);
+    margin: 0 0 1rem;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-soft);
+  }
+  .toc details {
+    background: var(--bg-soft);
+    border-radius: var(--radius);
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+  }
+  .toc summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .toc ol {
+    margin: 0.6rem 0 0.2rem;
+    padding-left: 1.3rem;
+  }
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+  }
+  .toc a:hover {
+    color: var(--accent);
+  }
+</style>
+
+<style is:global>
+  .prose {
+    font-size: 1.1rem;
+  }
+  .prose > h2 {
+    font-size: clamp(1.6rem, 3.5vw, 2rem);
+    margin: 3.5rem 0 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed var(--border);
+  }
+  .prose > h2:first-child {
+    border-top: 0;
+    margin-top: 1rem;
+  }
+  .prose > h3 {
+    font-size: 1.3rem;
+    margin: 2rem 0 0.6rem;
+  }
+  .prose p,
+  .prose li {
+    max-width: var(--measure);
+  }
+  .prose ul,
+  .prose ol {
+    padding-left: 1.4rem;
+  }
+  .prose li + li {
+    margin-top: 0.35rem;
+  }
+  .prose blockquote {
+    margin: 1.5rem 0;
+    padding: 0.4rem 1.2rem;
+    border-left: 4px solid var(--warm);
+    background: var(--warm-soft);
+    border-radius: 0 10px 10px 0;
+  }
+  .prose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.97rem;
+    display: block;
+    overflow-x: auto;
+  }
+  .prose th,
+  .prose td {
+    border-bottom: 1px solid var(--border);
+    padding: 0.6rem 0.8rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .prose th {
+    background: var(--bg-soft);
+  }
+  .prose hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 3rem 0;
+  }
+  .prose figure {
+    margin: 2rem 0;
+  }
+  .prose figcaption {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    margin-top: 0.5rem;
+  }
+</style>

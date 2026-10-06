@@ -1,0 +1,162 @@
+---
+import { techniques } from '../../data/learning-how-to-learn';
+import { useTranslations, type Lang } from '../../i18n/ui';
+interface Props { lang: Lang; storageKey?: string }
+const { lang, storageKey = 'challenge.2026-10' } = Astro.props;
+const t = useTranslations(lang);
+const s = {
+  en: {
+    label: 'Your 30-day experiment',
+    pick: 'Pick 1 or 2 techniques to try this month',
+    subject: 'Which subject will you try it with?', subjectPh: 'e.g. Maths',
+    when: 'When exactly?', whenPh: 'e.g. Every evening at 20:00, after dinner',
+    obstacle: 'What might stop you — and what will you do then?', obstaclePh: 'e.g. If I feel tired, I will do just one 25-minute round',
+    make: 'Make my card', cardTitle: 'My 30-day experiment', cardTry: 'I will try', cardWith: 'With', cardWhen: 'When', cardIf: 'Plan B',
+    tracker: 'Tick a day each time you do it', reflect: 'One thing I learned today', reflectPh: 'Write a sentence…',
+    max: 'Pick up to 2.',
+  },
+  vi: {
+    label: 'Thí nghiệm 30 ngày của em',
+    pick: 'Chọn 1 hoặc 2 kỹ thuật để thử trong tháng này',
+    subject: 'Em sẽ áp dụng cho môn nào?', subjectPh: 'VD: Toán',
+    when: 'Cụ thể lúc nào?', whenPh: 'VD: Mỗi tối lúc 20:00, sau bữa tối',
+    obstacle: 'Điều gì có thể cản trở em — và khi đó em sẽ làm gì?', obstaclePh: 'VD: Nếu mệt, em sẽ chỉ làm đúng một vòng 25 phút',
+    make: 'Tạo thẻ cam kết', cardTitle: 'Thí nghiệm 30 ngày', cardTry: 'Em sẽ thử', cardWith: 'Môn', cardWhen: 'Khi nào', cardIf: 'Phương án B',
+    tracker: 'Đánh dấu mỗi ngày em làm được', reflect: 'Một điều em học được hôm nay', reflectPh: 'Viết một câu…',
+    max: 'Chọn tối đa 2.',
+  },
+}[lang];
+const techLabels = Object.fromEntries(techniques.map((x) => [x.id, x.label[lang]]));
+---
+<div class="widget commit" data-commit data-key={storageKey} data-strings={JSON.stringify(s)} data-techs={JSON.stringify(techLabels)}>
+  <span class="widget-label">{s.label}</span>
+  <fieldset>
+    <legend>{s.pick}</legend>
+    <div class="chips">
+      {techniques.map((x) => (
+        <label class="chip"><input type="checkbox" name="tech" value={x.id} /><span>{x.label[lang]}</span></label>
+      ))}
+    </div>
+    <p class="max" data-max hidden>{s.max}</p>
+  </fieldset>
+  <div class="fields">
+    <label>{s.subject}<input name="subject" placeholder={s.subjectPh} /></label>
+    <label>{s.when}<input name="when" placeholder={s.whenPh} /></label>
+    <label class="wide">{s.obstacle}<input name="obstacle" placeholder={s.obstaclePh} /></label>
+  </div>
+  <div class="row"><button class="btn btn-primary" type="button" data-make>✦ {s.make}</button></div>
+
+  <div class="out" data-out hidden>
+    <canvas width="1080" height="1350" data-canvas></canvas>
+    <div class="row"><button class="btn" type="button" data-dl>⬇ {t('ui.download')} PNG</button></div>
+  </div>
+
+  <h4>{s.tracker}</h4>
+  <div class="grid" data-grid>
+    {Array.from({ length: 30 }, (_, i) => <button type="button" class="day" aria-pressed="false" data-day={i}>{i + 1}</button>)}
+  </div>
+
+  <label class="reflect">{s.reflect}<textarea name="reflect" rows="2" placeholder={s.reflectPh}></textarea></label>
+  <p class="saved">✓ {t('ui.saved')}</p>
+</div>
+
+<script>
+  type State = { techs: string[]; subject: string; when: string; obstacle: string; reflect: string; days: number[] };
+  document.querySelectorAll<HTMLElement>('[data-commit]').forEach((root) => {
+    const key = root.dataset.key || 'challenge';
+    const s = JSON.parse(root.dataset.strings || '{}');
+    const techs = JSON.parse(root.dataset.techs || '{}') as Record<string, string>;
+    const boxes = [...root.querySelectorAll<HTMLInputElement>('input[name=tech]')];
+    const field = (n: string) => root.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[name=${n}]`)!;
+    const days = [...root.querySelectorAll<HTMLButtonElement>('[data-day]')];
+    let st: State = { techs: [], subject: '', when: '', obstacle: '', reflect: '', days: [] };
+    try { st = { ...st, ...JSON.parse(localStorage.getItem(key) || '{}') }; } catch {}
+    const save = () => { try { localStorage.setItem(key, JSON.stringify(st)); } catch {} };
+
+    boxes.forEach((b) => (b.checked = st.techs.includes(b.value)));
+    (['subject', 'when', 'obstacle', 'reflect'] as const).forEach((n) => {
+      const f = field(n); f.value = st[n];
+      f.addEventListener('input', () => { st[n] = f.value; save(); });
+    });
+    days.forEach((d) => d.setAttribute('aria-pressed', String(st.days.includes(Number(d.dataset.day)))));
+
+    root.querySelector('fieldset')!.addEventListener('change', (e) => {
+      const target = e.target as HTMLInputElement;
+      const picked = boxes.filter((b) => b.checked);
+      const max = root.querySelector<HTMLElement>('[data-max]')!;
+      if (picked.length > 2) { target.checked = false; max.hidden = false; } else max.hidden = true;
+      st.techs = boxes.filter((b) => b.checked).map((b) => b.value); save();
+    });
+    days.forEach((d) => d.addEventListener('click', () => {
+      const n = Number(d.dataset.day);
+      st.days = st.days.includes(n) ? st.days.filter((x) => x !== n) : [...st.days, n];
+      d.setAttribute('aria-pressed', String(st.days.includes(n))); save();
+    }));
+
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-canvas]')!;
+    function wrap(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxW: number, lh: number) {
+      const words = text.split(' '); let line = '';
+      for (const w of words) {
+        const test = line ? line + ' ' + w : w;
+        if (ctx.measureText(test).width > maxW && line) { ctx.fillText(line, x, y); y += lh; line = w; } else line = test;
+      }
+      if (line) ctx.fillText(line, x, y);
+      return y + lh;
+    }
+    root.querySelector('[data-make]')!.addEventListener('click', async () => {
+      await document.fonts?.ready;
+      const ctx = canvas.getContext('2d')!; const W = 1080, H = 1350;
+      const grad = ctx.createLinearGradient(0, 0, W, H); grad.addColorStop(0, '#1f6f5c'); grad.addColorStop(1, '#14473b');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#e07a3f'; ctx.beginPath(); ctx.arc(W - 120, 140, 70, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.beginPath(); ctx.arc(120, H - 100, 220, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fdf8ef'; ctx.font = '700 76px Lora, Georgia, serif';
+      let y = wrap(ctx, s.cardTitle, 90, 220, 760, 90) + 40;
+      const blocks: [string, string][] = [
+        [s.cardTry, st.techs.map((x) => techs[x]).join(' + ') || '—'],
+        [s.cardWith, st.subject || '—'],
+        [s.cardWhen, st.when || '—'],
+        [s.cardIf, st.obstacle || '—'],
+      ];
+      for (const [k, v] of blocks) {
+        ctx.fillStyle = '#f2b98f'; ctx.font = '700 32px "Be Vietnam Pro", system-ui, sans-serif';
+        ctx.fillText(k.toUpperCase(), 90, y); y += 60;
+        ctx.fillStyle = '#ffffff'; ctx.font = '500 48px "Be Vietnam Pro", system-ui, sans-serif';
+        y = wrap(ctx, v, 90, y, 900, 64) + 40;
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = '500 30px "Be Vietnam Pro", system-ui, sans-serif';
+      ctx.fillText(new Date().toLocaleDateString(), 90, H - 80);
+      root.querySelector<HTMLElement>('[data-out]')!.hidden = false;
+    });
+    root.querySelector('[data-dl]')!.addEventListener('click', () => {
+      const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = 'my-30-day-experiment.png'; a.click();
+    });
+  });
+</script>
+
+<style>
+  fieldset { border: 0; padding: 0; margin: 0 0 1rem; }
+  legend { font-weight: 700; margin-bottom: 0.6rem; font-family: var(--font-head); font-size: 1.15rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .chip { position: relative; cursor: pointer; }
+  .chip input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .chip span { display: inline-block; padding: 0.5rem 0.95rem; border-radius: 999px; border: 1.5px solid var(--border); background: var(--bg); font-weight: 500; }
+  .chip input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .chip input:focus-visible + span { outline: 3px solid var(--warm); outline-offset: 2px; }
+  .max { color: var(--bad); font-size: 0.9rem; margin: 0.4rem 0 0; }
+  .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 1rem; }
+  .fields .wide { grid-column: 1 / -1; }
+  label { display: grid; gap: 0.3rem; font-weight: 600; font-size: 0.92rem; }
+  input, textarea { font: inherit; font-weight: 400; padding: 0.6rem 0.8rem; border-radius: 10px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); min-height: 44px; }
+  input:focus, textarea:focus { border-color: var(--accent); outline: none; }
+  .out { margin: 1.2rem 0; text-align: center; }
+  canvas { width: min(100%, 360px); height: auto; border-radius: 16px; box-shadow: var(--shadow); margin-bottom: 0.8rem; }
+  .out .row { justify-content: center; }
+  h4 { margin: 1.6rem 0 0.6rem; font-family: var(--font-head); font-size: 1.1rem; }
+  .grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+  .day { aspect-ratio: 1; border-radius: 8px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text-soft); font: inherit; font-size: 0.85rem; cursor: pointer; }
+  .day[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+  .reflect { margin-top: 1.4rem; }
+  .saved { font-size: 0.8rem; color: var(--text-soft); margin: 0.5rem 0 0; }
+  @media (max-width: 560px) { .fields { grid-template-columns: 1fr; } .grid { grid-template-columns: repeat(6, 1fr); } }
+</style>

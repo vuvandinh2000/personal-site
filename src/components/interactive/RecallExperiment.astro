@@ -1,0 +1,126 @@
+---
+import { recallPassage } from '../../data/learning-how-to-learn';
+import type { Lang } from '../../i18n/ui';
+interface Props {
+  lang: Lang;
+  seconds?: number;
+}
+const { lang, seconds = 60 } = Astro.props;
+const s = {
+  en: {
+    label: 'Experiment',
+    title: 'The 60-second test',
+    intro: 'Press Start and read the paragraph. When time is up, it disappears. Then write down everything you remember.',
+    start: 'Start reading',
+    write: 'Time is up! Write down everything you remember — in any order, any words.',
+    placeholder: 'The octopus…',
+    compare: 'Compare with the original',
+    result: 'You remembered {n} of {total} facts.',
+    reflect: 'Most people remember fewer facts than they expected. Reading felt easy — but feeling familiar is not the same as knowing.',
+    again: 'Try again',
+  },
+  vi: {
+    label: 'Thí nghiệm',
+    title: 'Bài kiểm tra 60 giây',
+    intro: 'Bấm Bắt đầu và đọc đoạn văn. Hết giờ, đoạn văn sẽ biến mất. Sau đó viết lại tất cả những gì em nhớ.',
+    start: 'Bắt đầu đọc',
+    write: 'Hết giờ! Viết lại tất cả những gì em nhớ — thứ tự và câu chữ thế nào cũng được.',
+    placeholder: 'Bạch tuộc…',
+    compare: 'So với đoạn gốc',
+    result: 'Em nhớ được {n} trên {total} ý.',
+    reflect: 'Phần lớn mọi người nhớ ít hơn mình tưởng. Lúc đọc thấy dễ — nhưng thấy quen không có nghĩa là đã biết.',
+    again: 'Làm lại',
+  },
+}[lang];
+const keywords = recallPassage.keywords.map((k) => k[lang]);
+---
+<div class="widget recall" data-recall data-seconds={seconds} data-keywords={JSON.stringify(keywords)} data-template={s.result}>
+  <span class="widget-label">{s.label}</span>
+  <h3>{s.title}</h3>
+  <p class="intro" data-step="intro">{s.intro}</p>
+
+  <div class="passage-wrap">
+    <p class="passage" data-passage>{recallPassage.text[lang]}</p>
+    <div class="cover" data-cover>
+      <button class="btn btn-primary" type="button" data-start>▶ {s.start}</button>
+    </div>
+  </div>
+
+  <div class="timer" data-timer hidden>
+    <div class="bar"><span data-bar></span></div>
+    <span class="num" data-num>{seconds}</span>
+  </div>
+
+  <div data-write hidden>
+    <p><strong>{s.write}</strong></p>
+    <textarea rows="6" placeholder={s.placeholder} data-answer></textarea>
+    <div class="row"><button class="btn btn-primary" type="button" data-compare>{s.compare}</button></div>
+  </div>
+
+  <div class="result" data-result hidden>
+    <p class="score" data-score></p>
+    <p>{s.reflect}</p>
+    <button class="btn" type="button" data-again>↺ {s.again}</button>
+  </div>
+</div>
+
+<script>
+  const norm = (x: string) => x.toLowerCase().normalize('NFC');
+  document.querySelectorAll<HTMLElement>('[data-recall]').forEach((root) => {
+    const total = Number(root.dataset.seconds || 60);
+    const keywords = JSON.parse(root.dataset.keywords || '[]') as string[][];
+    const $ = <T extends HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+    const passage = $('[data-passage]'), cover = $('[data-cover]'), timer = $('[data-timer]');
+    const bar = $('[data-bar]'), num = $('[data-num]'), write = $('[data-write]');
+    const answer = $<HTMLTextAreaElement>('[data-answer]'), result = $('[data-result]'), score = $('[data-score]');
+    let tick: number | undefined;
+
+    function reset() {
+      clearInterval(tick);
+      cover.hidden = false; passage.classList.remove('gone', 'reading');
+      timer.hidden = true; write.hidden = true; result.hidden = true; answer.value = '';
+      num.textContent = String(total); bar.style.width = '100%';
+    }
+    $('[data-start]').addEventListener('click', () => {
+      cover.hidden = true; passage.classList.add('reading'); timer.hidden = false;
+      const end = Date.now() + total * 1000;
+      tick = window.setInterval(() => {
+        const left = Math.max(0, end - Date.now());
+        num.textContent = String(Math.ceil(left / 1000));
+        bar.style.width = (left / (total * 1000)) * 100 + '%';
+        if (left <= 0) {
+          clearInterval(tick);
+          passage.classList.add('gone'); timer.hidden = true; write.hidden = false; answer.focus();
+        }
+      }, 200);
+    });
+    $('[data-compare]').addEventListener('click', () => {
+      const text = norm(answer.value);
+      const n = keywords.filter((alts) => alts.some((k) => text.includes(norm(k)))).length;
+      score.textContent = (root.dataset.template || '').replace('{n}', String(n)).replace('{total}', String(keywords.length));
+      passage.classList.remove('gone'); result.hidden = false; write.querySelector('.row')!.setAttribute('hidden', '');
+    });
+    $('[data-again]').addEventListener('click', () => { write.querySelector('.row')!.removeAttribute('hidden'); reset(); });
+  });
+</script>
+
+<style>
+  .passage-wrap { position: relative; border-radius: 12px; overflow: hidden; margin: 1rem 0; }
+  .passage {
+    margin: 0; padding: 1.1rem 1.25rem; background: var(--bg-soft); border-radius: 12px;
+    filter: blur(6px); user-select: none; transition: filter 0.3s ease, opacity 0.6s ease;
+  }
+  .passage.reading { filter: none; user-select: text; }
+  .passage.gone { opacity: 0; filter: blur(8px); }
+  .cover { position: absolute; inset: 0; display: grid; place-items: center; }
+  .timer { display: flex; align-items: center; gap: 0.8rem; }
+  .bar { flex: 1; height: 8px; background: var(--bg-soft); border-radius: 99px; overflow: hidden; }
+  .bar span { display: block; height: 100%; width: 100%; background: var(--warm); transition: width 0.2s linear; }
+  .num { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 2.5ch; text-align: right; }
+  textarea {
+    width: 100%; font: inherit; padding: 0.8rem 1rem; border-radius: 12px;
+    border: 1.5px solid var(--border); background: var(--bg); color: var(--text); margin-bottom: 0.8rem; resize: vertical;
+  }
+  textarea:focus { border-color: var(--accent); outline: none; }
+  .score { font-size: 1.4rem; font-weight: 700; font-family: var(--font-head); color: var(--accent); margin: 0.5rem 0; }
+</style>

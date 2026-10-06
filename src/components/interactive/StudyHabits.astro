@@ -1,0 +1,48 @@
+---
+import { studyHabits } from '../../data/learning-how-to-learn';
+import type { Lang } from '../../i18n/ui';
+interface Props { lang: Lang; question: string; label?: string }
+const { lang, question, label } = Astro.props;
+---
+<div class="widget habits" data-habits>
+  {label && <span class="widget-label">{label}</span>}
+  <h3>{question}</h3>
+  <div class="chips">
+    {
+      studyHabits.map((h) => (
+        <label class="chip">
+          <input type="checkbox" value={h.id} data-passive={h.passive ? '1' : ''} />
+          <span>{h.label[lang]}</span>
+        </label>
+      ))
+    }
+  </div>
+</div>
+
+<script>
+  const KEY = 'lhtl.habits';
+  document.querySelectorAll<HTMLElement>('[data-habits]').forEach((root) => {
+    const boxes = [...root.querySelectorAll<HTMLInputElement>('input[type=checkbox]')];
+    let saved: string[] = [];
+    try { saved = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch {}
+    boxes.forEach((b) => (b.checked = saved.includes(b.value)));
+    root.addEventListener('change', () => {
+      const picked = boxes.filter((b) => b.checked).map((b) => b.value);
+      try { localStorage.setItem(KEY, JSON.stringify(picked)); } catch {}
+      window.dispatchEvent(new CustomEvent('habits-change', { detail: picked }));
+    });
+  });
+</script>
+
+<style>
+  .chips { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .chip { position: relative; cursor: pointer; }
+  .chip input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .chip span {
+    display: inline-block; padding: 0.55rem 1rem; border-radius: 999px;
+    border: 1.5px solid var(--border); background: var(--bg); font-weight: 500;
+    transition: all 0.15s ease;
+  }
+  .chip input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .chip input:focus-visible + span { outline: 3px solid var(--warm); outline-offset: 2px; }
+</style>

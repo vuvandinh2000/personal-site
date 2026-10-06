@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PostCard from '../../../components/PostCard.astro';
+import { langs, useTranslations, type Lang } from '../../../i18n/ui';
+import { getPosts } from '../../../lib';
+
+export function getStaticPaths() {
+  return langs.map((lang) => ({ params: { lang } }));
+}
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+const posts = await getPosts(lang);
+---
+<BaseLayout lang={lang} title={t('blog.title')} description={t('blog.description')}>
+  <div class="container page">
+    <h1>{t('blog.title')}</h1>
+    <p class="sub">{t('blog.description')}</p>
+    <div class="grid">{posts.map((post) => <PostCard post={post} lang={lang} />)}</div>
+  </div>
+</BaseLayout>
+<style>
+  .page { padding-top: 2.5rem; }
+  h1 { font-size: clamp(2rem, 4vw, 2.8rem); margin: 0 0 0.4rem; }
+  .sub { color: var(--text-soft); margin: 0 0 2rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+</style>

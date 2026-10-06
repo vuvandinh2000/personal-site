@@ -1,0 +1,32 @@
+---
+/** Shows a gentle note if the reader picked passive study habits in <StudyHabits/>. */
+import { studyHabits } from '../../data/learning-how-to-learn';
+import type { Lang } from '../../i18n/ui';
+interface Props { lang: Lang; template: string }
+const { lang, template } = Astro.props;
+const labels = Object.fromEntries(studyHabits.filter((h) => h.passive).map((h) => [h.id, h.label[lang]]));
+---
+<p class="echo" data-habit-echo data-labels={JSON.stringify(labels)} data-template={template} hidden></p>
+
+<script>
+  function render() {
+    let picked: string[] = [];
+    try { picked = JSON.parse(localStorage.getItem('lhtl.habits') || '[]'); } catch {}
+    document.querySelectorAll<HTMLElement>('[data-habit-echo]').forEach((el) => {
+      const labels = JSON.parse(el.dataset.labels || '{}') as Record<string, string>;
+      const hits = picked.filter((p) => labels[p]).map((p) => labels[p]);
+      if (!hits.length) { el.hidden = true; return; }
+      el.textContent = (el.dataset.template || '').replace('{habits}', hits.join(', '));
+      el.hidden = false;
+    });
+  }
+  render();
+  window.addEventListener('habits-change', render);
+</script>
+
+<style>
+  .echo {
+    padding: 0.8rem 1.1rem; border-radius: 12px; background: var(--warm-soft);
+    border-left: 4px solid var(--warm); font-weight: 500;
+  }
+</style>

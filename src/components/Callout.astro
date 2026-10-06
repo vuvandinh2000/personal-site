@@ -1,0 +1,23 @@
+---
+/** Highlighted box. type: tip | mentor | story | key */
+interface Props { type?: 'tip' | 'mentor' | 'story' | 'key'; title?: string }
+const { type = 'tip', title } = Astro.props;
+const icons = { tip: '💡', mentor: '🧑‍💻', story: '📖', key: '🔑' };
+---
+<aside class:list={['callout', type]}>
+  <span class="icon" aria-hidden="true">{icons[type]}</span>
+  <div>
+    {title && <p class="title">{title}</p>}
+    <slot />
+  </div>
+</aside>
+<style>
+  .callout { display: flex; gap: 0.9rem; margin: 1.6rem 0; padding: 1rem 1.2rem; border-radius: var(--radius); background: var(--bg-soft); border: 1px solid var(--border); }
+  .icon { font-size: 1.4rem; line-height: 1.6; }
+  .title { font-weight: 700; margin: 0 0 0.2rem; }
+  .callout :global(p) { margin: 0.3rem 0; }
+  .key { background: var(--accent-soft); border-color: transparent; }
+  .key .title { color: var(--accent); }
+  .story { background: var(--warm-soft); border-color: transparent; }
+  .mentor { border-style: dashed; }
+</style>

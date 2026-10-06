@@ -1,0 +1,123 @@
+---
+import { quiz } from '../../data/learning-how-to-learn';
+import { useTranslations, type Lang } from '../../i18n/ui';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const s = {
+  en: { label: 'Quiz', title: 'Myth or Fact?', q: 'Question', perfect: 'Perfect score! You could teach this now.', good: 'Nice work — review the ones you missed.', low: 'Good start. Scroll back up and try again tomorrow — that is spaced repetition!' },
+  vi: { label: 'Quiz', title: 'Đúng hay Sai?', q: 'Câu', perfect: 'Đúng hết! Em có thể giảng lại bài này rồi đấy.', good: 'Làm tốt lắm — xem lại những câu em sai nhé.', low: 'Khởi đầu ổn. Đọc lại phần trên và làm lại vào ngày mai — đó chính là ôn ngắt quãng!' },
+}[lang];
+---
+<div class="widget quiz" data-quiz data-strings={JSON.stringify({ correct: t('ui.correct'), wrong: t('ui.wrong'), perfect: s.perfect, good: s.good, low: s.low })}>
+  <span class="widget-label">{s.label}</span>
+  <h3>{s.title}</h3>
+  <div class="dots" aria-hidden="true">{quiz.map(() => <span></span>)}</div>
+  {
+    quiz.map((item, i) => (
+      <div class="item" data-item data-answer={item.answer} hidden={i !== 0}>
+        <p class="num">{s.q} {i + 1} / {quiz.length}</p>
+        <p class="stmt">“{item.q[lang]}”</p>
+        <div class="row choices">
+          <button class="btn choice" type="button" data-pick="myth">✗ {t('ui.myth')}</button>
+          <button class="btn choice" type="button" data-pick="fact">✓ {t('ui.fact')}</button>
+        </div>
+        <div class="why" data-why hidden>
+          <strong data-verdict></strong> {item.why[lang]}
+        </div>
+        <div class="row next" hidden data-next-row>
+          <button class="btn btn-primary" type="button" data-next>{t('ui.next')} →</button>
+        </div>
+      </div>
+    ))
+  }
+  <div class="end" data-end hidden>
+    <p class="label">{t('ui.score')}</p>
+    <p class="score"><span data-score>0</span> / {quiz.length}</p>
+    <p data-msg></p>
+    <button class="btn" type="button" data-restart>↺ {t('ui.tryAgain')}</button>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-quiz]').forEach((root) => {
+    const s = JSON.parse(root.dataset.strings || '{}');
+    const items = [...root.querySelectorAll<HTMLElement>('[data-item]')];
+    const dots = [...root.querySelectorAll<HTMLElement>('.dots span')];
+    const end = root.querySelector<HTMLElement>('[data-end]')!;
+    let i = 0, score = 0;
+    const show = () => items.forEach((it, k) => (it.hidden = k !== i));
+    items.forEach((it, k) => {
+      it.querySelectorAll<HTMLButtonElement>('[data-pick]').forEach((b) => b.addEventListener('click', () => {
+        const ok = b.dataset.pick === it.dataset.answer;
+        if (ok) score++;
+        it.querySelectorAll<HTMLButtonElement>('[data-pick]').forEach((x) => {
+          x.disabled = true;
+          if (x.dataset.pick === it.dataset.answer) x.classList.add('right');
+          else if (x === b) x.classList.add('wrong');
+        });
+        dots[k].className = ok ? 'ok' : 'no';
+        const why = it.querySelector<HTMLElement>('[data-why]')!;
+        why.querySelector('[data-verdict]')!.textContent = ok ? s.correct : s.wrong;
+        why.classList.toggle('ok', ok); why.hidden = false;
+        it.querySelector<HTMLElement>('[data-next-row]')!.hidden = false;
+        it.querySelector<HTMLButtonElement>('[data-next]')!.focus();
+      }));
+      it.querySelector('[data-next]')!.addEventListener('click', () => {
+        i++;
+        if (i < items.length) show();
+        else {
+          items.forEach((x) => (x.hidden = true));
+          root.querySelector('[data-score]')!.textContent = String(score);
+          root.querySelector('[data-msg]')!.textContent = score === items.length ? s.perfect : score >= items.length * 0.6 ? s.good : s.low;
+          end.hidden = false;
+          if (score === items.length) confetti(root);
+        }
+      });
+    });
+    root.querySelector('[data-restart]')!.addEventListener('click', () => {
+      i = 0; score = 0; end.hidden = true; dots.forEach((d) => (d.className = ''));
+      items.forEach((it) => {
+        it.querySelectorAll<HTMLButtonElement>('[data-pick]').forEach((x) => { x.disabled = false; x.classList.remove('right', 'wrong'); });
+        it.querySelector<HTMLElement>('[data-why]')!.hidden = true;
+        it.querySelector<HTMLElement>('[data-next-row]')!.hidden = true;
+      });
+      show();
+    });
+  });
+  function confetti(root: HTMLElement) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const colors = ['#e07a3f', '#1f6f5c', '#f2c14e', '#5cc4a6', '#c2453b'];
+    for (let k = 0; k < 60; k++) {
+      const p = document.createElement('span');
+      p.className = 'confetti';
+      p.style.cssText = `left:${Math.random() * 100}%;background:${colors[k % colors.length]};animation-delay:${Math.random() * 0.4}s;transform:rotate(${Math.random() * 360}deg)`;
+      root.append(p);
+      setTimeout(() => p.remove(), 2200);
+    }
+  }
+</script>
+
+<style>
+  .quiz { position: relative; overflow: hidden; }
+  .dots { display: flex; gap: 6px; margin-bottom: 1rem; }
+  .dots span { flex: 1; height: 6px; border-radius: 99px; background: var(--bg-soft); }
+  .dots span.ok { background: var(--good); }
+  .dots span.no { background: var(--bad); }
+  .num { font-size: 0.85rem; color: var(--text-soft); font-weight: 600; margin: 0; }
+  .stmt { font-family: var(--font-head); font-size: clamp(1.2rem, 3vw, 1.45rem); font-weight: 600; margin: 0.4rem 0 1.2rem; }
+  .choices .choice { flex: 1; min-width: 130px; font-size: 1.05rem; min-height: 52px; }
+  .choice.right, .choice.right:disabled { background: var(--good); border-color: var(--good); color: #fff; opacity: 1; }
+  .choice.wrong, .choice.wrong:disabled { background: var(--bad); border-color: var(--bad); color: #fff; opacity: 1; }
+  .why { margin-top: 1rem; padding: 0.9rem 1.1rem; border-radius: 12px; background: var(--warm-soft); }
+  .why.ok { background: var(--accent-soft); }
+  .next { margin-top: 1rem; justify-content: flex-end; }
+  .end { text-align: center; padding: 1rem 0; }
+  .label { margin: 0; color: var(--text-soft); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.08em; }
+  .score { font-family: var(--font-head); font-size: 3rem; font-weight: 700; margin: 0.2rem 0; color: var(--accent); }
+  .quiz :global(.confetti) {
+    position: absolute; top: -10px; width: 8px; height: 14px; border-radius: 2px; pointer-events: none;
+    animation: fall 1.8s ease-in forwards;
+  }
+  @keyframes fall { to { top: 110%; transform: rotate(720deg); } }
+</style>

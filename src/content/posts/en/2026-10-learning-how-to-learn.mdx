@@ -1,0 +1,164 @@
+---
+title: Learning how to learn
+description: Study smarter, not longer — five brain-science ideas you can use in your exam year, starting tonight.
+date: 2026-10-07
+series: mentoring
+seriesOrder: 1
+kicker: Session 1
+tags: [learning, study-skills, grade-12]
+---
+
+import StudyHabits from '../../../components/interactive/StudyHabits.astro';
+import HabitEcho from '../../../components/interactive/HabitEcho.astro';
+import RecallExperiment from '../../../components/interactive/RecallExperiment.astro';
+import PinballToggle from '../../../components/interactive/PinballToggle.astro';
+import Flashcards from '../../../components/interactive/Flashcards.astro';
+import ForgettingCurve from '../../../components/interactive/ForgettingCurve.astro';
+import ReviewScheduler from '../../../components/interactive/ReviewScheduler.astro';
+import PomodoroTimer from '../../../components/interactive/PomodoroTimer.astro';
+import ExamTips from '../../../components/interactive/ExamTips.astro';
+import SleepCheck from '../../../components/interactive/SleepCheck.astro';
+import MythFactQuiz from '../../../components/interactive/MythFactQuiz.astro';
+import CommitmentCard from '../../../components/interactive/CommitmentCard.astro';
+import VideoEmbed from '../../../components/VideoEmbed.astro';
+import Callout from '../../../components/Callout.astro';
+import Illustration from '../../../components/Illustration.astro';
+
+<Illustration name="brain-gym" />
+
+This year you will spend hundreds of hours studying. Most students spend those hours the way they always have — re-reading, highlighting, staying up late. This page is about a different question: **not what to study, but how.**
+
+Everything here comes from *Learning How to Learn* by Barbara Oakley and Terrence Sejnowski — a book and one of the most popular online courses in the world. None of it needs talent. All of it can start tonight.
+
+## 1. How do you study?
+
+Before any theory, let's be honest about what we do now.
+
+<StudyHabits lang="en" label="Be honest" question="When you prepare for a test, what do you usually do? Pick all that apply." />
+
+Have you ever studied hard, felt ready — and then gone blank in the exam room? Let's find out why with a small experiment.
+
+<RecallExperiment lang="en" />
+
+Keep your result in mind. We will come back to it.
+
+## 2. Your brain has two modes
+
+Your brain works in two very different ways, and good learners switch between them on purpose.
+
+- **Focused mode** — you concentrate hard on one thing. Your thoughts travel along paths you already know, like a pinball bouncing between tightly packed bumpers.
+- **Diffuse mode** — your mind relaxes and wanders. Thoughts travel far and make unexpected connections, like a pinball on a board where the bumpers are spread wide apart.
+
+<PinballToggle lang="en" />
+
+<Callout type="key" title="Stuck? Switch modes.">
+  If you have been stuck on a problem for a while, stop. Take a walk, take a shower, draw something — then come back. Your brain keeps working on the problem in the background.
+</Callout>
+
+One warning: diffuse mode only helps **after** you have focused first. And scrolling your phone is not diffuse mode — your attention is still being pulled somewhere.
+
+<Callout type="story" title="Edison's trick">
+  Thomas Edison and the painter Salvador Dalí both liked to doze in a chair while holding something — a ball or a key. When they fell asleep, it dropped, the sound woke them up, and they wrote down the ideas that had just appeared from the diffuse mode.
+</Callout>
+
+Every programmer knows this one too: you stare at a bug for an hour, give up, go make a coffee — and the answer arrives on the way back to your desk.
+
+<VideoEmbed id="O96fE1E-rf8" title="Learning how to learn — Barbara Oakley (TEDx)" caption="Barbara Oakley explains the two modes with the pinball picture (about 17 minutes)." note="Tip: turn on subtitles in the player." />
+
+## 3. Familiar is not the same as known
+
+<Illustration name="feels-vs-works" labels={['Feels good', 'Actually works']} />
+
+Re-reading and highlighting **feel** productive, because the page looks familiar. But recognising something when you see it is much easier than recalling it from nothing in an exam. Oakley calls this the **illusion of competence**.
+
+<HabitEcho lang="en" template="Earlier you picked: {habits}. These feel good — but they mostly build familiarity, not memory." />
+
+Remember the 60-second experiment? That gap between "I read it" and "I can write it down" is exactly this illusion.
+
+The fix is **active recall**: close the book, pull the idea out of your own head, *then* check. The struggle to remember is what makes memory stronger.
+
+Ways to practise active recall:
+
+- **Flashcards** — question on the front, answer on the back.
+- **Practice tests** — every multiple-choice paper you do for the THPT exam is active recall.
+- **Teach someone** — a friend, a sibling, or a teddy bear.
+- **Blank-page summary** — after each lesson, write everything you remember on an empty page.
+
+Try it right now, on what you have read so far:
+
+<Flashcards lang="en" />
+
+## 4. Build a wall, not a pile of bricks
+
+Without review, we forget most new information within days. Every time you review, the memory lasts longer before it fades. That is **spaced repetition**: review after 1 day, 3 days, 1 week, 2 weeks.
+
+<ForgettingCurve lang="en" />
+
+<Illustration name="brick-wall" labels={['Cramming', 'Spaced practice']} caption="Cramming is building a whole wall while the mortar is still wet. Spacing lets each layer dry." />
+
+**Ten minutes a day beats three hours the night before.** Same total time — very different result.
+
+Two more ideas that make spaced practice even stronger:
+
+- **Chunking.** A chunk is a bundle of ideas your brain can use as one piece — like a song you know by heart. You build a chunk by understanding the main idea, practising it until it flows, and seeing where it fits in the bigger picture.
+- **Interleaving.** Mix different problem types in one session, so you learn *which* method to use — not just *how* to use it.
+
+<Illustration name="chunk" caption="Separate facts → one chunk you can use without thinking." />
+
+Plan your reviews now. Pick something you learned this week:
+
+<ReviewScheduler lang="en" />
+
+## 5. Beat the procrastination zombie
+
+<Illustration name="zombie" caption="The procrastination zombie: a habit that runs on autopilot." />
+
+Here is something surprising: just **thinking** about a task you don't like activates the part of the brain that feels pain. Opening your phone makes that feeling go away — for now. That is why we procrastinate. Oakley calls these automatic habits **zombies**.
+
+The good news: the pain fades about **20 minutes after you start**. Starting is the hardest part.
+
+So don't aim for the **product** ("finish chapter 3"). Aim for the **process** ("study for 25 focused minutes"). That is the **Pomodoro technique**:
+
+1. Put your phone in another room.
+2. Set a timer for 25 minutes. Work on one task only.
+3. When it rings, reward yourself with a 5-minute break.
+4. After four rounds, take a longer break.
+
+<PomodoroTimer lang="en" label="Try a 3-minute demo now" preset="demo" />
+
+You can always come back to this timer at [Tools → Pomodoro timer](/en/tools/pomodoro/).
+
+## 6. Your brain needs a body
+
+<Illustration name="sleep" />
+
+- **Sleep** is when your brain cleans out waste and strengthens what you learned that day. Staying up all night before a test backfires.
+- **Exercise** helps new neurons grow in the part of the brain used for memory. Even a 20-minute walk counts.
+
+<SleepCheck lang="en" />
+
+And three tips for the exam room itself:
+
+<ExamTips lang="en" label="In the exam" />
+
+## 7. Myth or fact?
+
+Time to test yourself — which is, of course, active recall.
+
+<MythFactQuiz lang="en" />
+
+## 8. Your challenge this month
+
+Knowing these ideas changes nothing. **Using** them does. Pick one or two to try for the next 30 days — small is fine. Next month, bring one story: what worked, and what didn't.
+
+<CommitmentCard lang="en" storageKey="challenge.2026-10" />
+
+## Want to go deeper?
+
+- **Book:** [*Learning How to Learn: A Guide for Kids and Teens*](https://penguinrandomhouse.ca/books/563935/learning-how-to-learn-by-barbara-oakley-phd-and-terrence-sejnowski-phd-with-alistair-mcconville) — Barbara Oakley, Terrence Sejnowski & Alistair McConville (2018). Short, friendly, full of pictures.
+- **Course:** [Learning How to Learn on Coursera](https://www.coursera.org/learn/learning-how-to-learn) — free to audit.
+- **Video:** [Barbara Oakley's TEDx talk](https://www.youtube.com/watch?v=O96fE1E-rf8).
+- **Fun fact:** Barbara Oakley [visited VinUni in Hanoi](https://giaoduc.net.vn/post-231252.gd) in November 2022 to talk about exactly this topic.
+- **Apps:** Anki and Quizlet do spaced-repetition flashcards for you.
+
+See you next month.

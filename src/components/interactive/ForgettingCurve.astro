@@ -1,0 +1,114 @@
+---
+import { useTranslations, type Lang } from '../../i18n/ui';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const s = {
+  en: {
+    label: 'Try it',
+    title: 'What happens when you review?',
+    pick: 'Tap the days you review:',
+    result: 'Still remembered on day 30:',
+    none: 'No reviews: almost everything is gone within a week.',
+  },
+  vi: {
+    label: 'Thử xem',
+    title: 'Chuyện gì xảy ra khi em ôn lại?',
+    pick: 'Chạm vào những ngày em ôn bài:',
+    result: 'Còn nhớ vào ngày 30:',
+    none: 'Không ôn lại: gần như quên sạch chỉ sau một tuần.',
+  },
+}[lang];
+const days = [1, 3, 7, 14];
+---
+<div class="widget curve" data-curve data-day={t('ui.day')} data-none={s.none}>
+  <span class="widget-label">{s.label}</span>
+  <h3>{s.title}</h3>
+  <p class="pick">{s.pick}</p>
+  <div class="row chips">
+    {days.map((d) => (
+      <button class="btn" type="button" aria-pressed="false" data-review={d}>{t('ui.day')} {d}</button>
+    ))}
+  </div>
+  <svg viewBox="0 0 720 312" role="img" aria-label={s.title} data-svg>
+    <g data-grid></g>
+    <path data-area fill="var(--accent)" fill-opacity="0.12" />
+    <path data-line fill="none" stroke="var(--accent)" stroke-width="3.5" stroke-linejoin="round" />
+    <g data-marks></g>
+    <text x="56" y="20" font-size="13" fill="var(--text-soft)">{t('ui.remembered')} (%)</text>
+    <text x="378" y="306" font-size="13" fill="var(--text-soft)" text-anchor="middle">{t('ui.day')}</text>
+  </svg>
+  <div class="foot">
+    <p class="big"><span>{s.result}</span> <strong data-final>0%</strong></p>
+    <p class="note" data-note></p>
+    <p class="disclaimer">{t('ui.illustration')}</p>
+  </div>
+</div>
+
+<script>
+  const X0 = 56, X1 = 700, Y0 = 34, Y1 = 262, DAYS = 30;
+  const x = (d: number) => X0 + (d / DAYS) * (X1 - X0);
+  const y = (r: number) => Y1 - r * (Y1 - Y0);
+  function retention(day: number, reviews: number[]) {
+    let last = 0, strength = 1.2;
+    for (const r of reviews) if (r <= day) { last = r; strength *= 2.6; }
+    return Math.exp(-(day - last) / strength);
+  }
+  document.querySelectorAll<HTMLElement>('[data-curve]').forEach((root) => {
+    const svg = root.querySelector('[data-svg]')!;
+    const line = svg.querySelector('[data-line]')!, area = svg.querySelector('[data-area]')!;
+    const marks = svg.querySelector('[data-marks]')!, grid = svg.querySelector('[data-grid]')!;
+    const fin = root.querySelector('[data-final]')!, note = root.querySelector<HTMLElement>('[data-note]')!;
+    const ns = 'http://www.w3.org/2000/svg';
+    const el = (tag: string, attrs: Record<string, string | number>, text?: string) => {
+      const e = document.createElementNS(ns, tag);
+      Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, String(v)));
+      if (text) e.textContent = text;
+      return e;
+    };
+    [0, 0.25, 0.5, 0.75, 1].forEach((r) => {
+      grid.append(el('line', { x1: X0, x2: X1, y1: y(r), y2: y(r), stroke: 'var(--border)' }));
+      grid.append(el('text', { x: X0 - 8, y: y(r) + 4, 'text-anchor': 'end', 'font-size': 12, fill: 'var(--text-soft)' }, `${r * 100}`));
+    });
+    [0, 5, 10, 15, 20, 25, 30].forEach((d) =>
+      grid.append(el('text', { x: x(d), y: Y1 + 20, 'text-anchor': 'middle', 'font-size': 12, fill: 'var(--text-soft)' }, String(d))));
+
+    const reviews = new Set<number>();
+    function render() {
+      const list = [...reviews].sort((a, b) => a - b);
+      let d = `M ${x(0)} ${y(1)}`;
+      for (let t = 0.1; t <= DAYS + 0.001; t += 0.1) {
+        const day = Math.round(t * 10) / 10;
+        if (list.some((r) => Math.abs(r - day) < 0.05)) d += ` L ${x(day)} ${y(retention(day - 0.0001, list))}`;
+        d += ` L ${x(day)} ${y(retention(day, list))}`;
+      }
+      line.setAttribute('d', d);
+      area.setAttribute('d', `${d} L ${x(DAYS)} ${Y1} L ${x(0)} ${Y1} Z`);
+      marks.replaceChildren(...list.map((r) => el('circle', { cx: x(r), cy: y(1), r: 6, fill: 'var(--warm)' })));
+      const end = Math.round(retention(DAYS, list) * 100);
+      fin.textContent = `${end}%`;
+      note.textContent = list.length ? '' : root.dataset.none || '';
+      note.hidden = !!list.length;
+    }
+    root.querySelectorAll<HTMLButtonElement>('[data-review]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const d = Number(b.dataset.review);
+        reviews.has(d) ? reviews.delete(d) : reviews.add(d);
+        b.setAttribute('aria-pressed', String(reviews.has(d)));
+        render();
+      }));
+    render();
+  });
+</script>
+
+<style>
+  .pick { margin: 0 0 0.5rem; color: var(--text-soft); }
+  .chips [aria-pressed='true'] { background: var(--warm); border-color: var(--warm); color: #fff; }
+  svg { width: 100%; height: auto; margin-top: 1rem; }
+  path[data-line] { transition: d 0.4s ease; }
+  .foot { margin-top: 0.5rem; }
+  .big { font-size: 1.1rem; margin: 0; }
+  .big strong { font-size: 1.8rem; font-family: var(--font-head); color: var(--accent); margin-left: 0.3rem; }
+  .note { margin: 0.3rem 0 0; color: var(--bad); font-weight: 500; }
+  .disclaimer { margin: 0.4rem 0 0; font-size: 0.8rem; color: var(--text-soft); font-style: italic; }
+</style>

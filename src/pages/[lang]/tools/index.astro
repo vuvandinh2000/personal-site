@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { langs, useTranslations, localePath, type Lang } from '../../../i18n/ui';
+export function getStaticPaths() { return langs.map((lang) => ({ params: { lang } })); }
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+const tools = [{ href: localePath(lang, '/tools/pomodoro'), title: t('tools.pomodoro'), desc: t('tools.pomodoroDesc'), icon: '🍅' }];
+---
+<BaseLayout lang={lang} title={t('tools.title')}>
+  <div class="container-narrow page">
+    <h1>{t('tools.title')}</h1>
+    <ul class="list">
+      {tools.map((x) => (
+        <li><a href={x.href}><span class="ic">{x.icon}</span><span><strong>{x.title}</strong><span class="d">{x.desc}</span></span></a></li>
+      ))}
+    </ul>
+  </div>
+</BaseLayout>
+<style>
+  .page { padding-top: 2.5rem; }
+  h1 { font-size: clamp(2rem, 4vw, 2.8rem); }
+  .list { list-style: none; padding: 0; display: grid; gap: 0.8rem; }
+  .list a { display: flex; gap: 1rem; align-items: center; padding: 1.1rem 1.3rem; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); color: inherit; text-decoration: none; }
+  .list a:hover { border-color: var(--accent); }
+  .ic { font-size: 2rem; }
+  strong { display: block; font-size: 1.1rem; }
+  .d { color: var(--text-soft); }
+</style>

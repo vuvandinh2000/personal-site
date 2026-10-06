@@ -1,0 +1,115 @@
+---
+import type { Lang } from '../../i18n/ui';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = {
+  en: {
+    label: 'Play with it',
+    focused: 'Focused mode',
+    diffuse: 'Diffuse mode',
+    fText: 'Bumpers packed tightly: thoughts bounce around familiar paths. Great for practising what you already started to understand.',
+    dText: 'Bumpers spread out: thoughts travel far and bump into new ideas. Great for new concepts and for getting unstuck.',
+    aria: 'Animated pinball board showing how thoughts move in each mode',
+  },
+  vi: {
+    label: 'Thử xem',
+    focused: 'Chế độ tập trung',
+    diffuse: 'Chế độ lan toả',
+    fText: 'Các cọc xếp sát nhau: suy nghĩ nảy quanh những lối quen. Hợp để luyện những gì em đã bắt đầu hiểu.',
+    dText: 'Các cọc xếp thưa: suy nghĩ đi xa và gặp ý tưởng mới. Hợp để học khái niệm mới và để gỡ bí.',
+    aria: 'Bàn pinball động minh hoạ cách suy nghĩ di chuyển ở mỗi chế độ',
+  },
+}[lang];
+---
+<div class="widget pinball" data-pinball>
+  <span class="widget-label">{s.label}</span>
+  <div class="toggle" role="tablist">
+    <button class="btn on" type="button" role="tab" aria-selected="true" data-mode="focused">{s.focused}</button>
+    <button class="btn" type="button" role="tab" aria-selected="false" data-mode="diffuse">{s.diffuse}</button>
+  </div>
+  <canvas width="720" height="360" role="img" aria-label={s.aria}></canvas>
+  <p class="caption" data-caption data-f={s.fText} data-d={s.dText}>{s.fText}</p>
+</div>
+
+<script>
+  type Bumper = { x: number; y: number; r: number; hit: number };
+  document.querySelectorAll<HTMLElement>('[data-pinball]').forEach((root) => {
+    const canvas = root.querySelector('canvas')!;
+    const ctx = canvas.getContext('2d')!;
+    const caption = root.querySelector<HTMLElement>('[data-caption]')!;
+    const W = canvas.width, H = canvas.height;
+    let mode: 'focused' | 'diffuse' = 'focused';
+    let bumpers: Bumper[] = [];
+    let ball = { x: 360, y: 40, vx: 2.2, vy: 0 };
+    let trail: { x: number; y: number }[] = [];
+
+    function layout() {
+      bumpers = [];
+      if (mode === 'focused') {
+        // dense cluster in the middle
+        for (let row = 0; row < 6; row++)
+          for (let col = 0; col < 9; col++) {
+            const x = 200 + col * 40 + (row % 2) * 20, y = 80 + row * 40;
+            bumpers.push({ x, y, r: 11, hit: 0 });
+          }
+      } else {
+        const pts = [[110,90],[300,70],[520,100],[640,200],[200,220],[420,190],[600,300],[120,300],[330,310]];
+        pts.forEach(([x, y]) => bumpers.push({ x, y, r: 18, hit: 0 }));
+      }
+      ball = { x: mode === 'focused' ? 330 : 80, y: 30, vx: mode === 'focused' ? 1.4 : 3.2, vy: 0 };
+      trail = [];
+    }
+    const css = (v: string) => getComputedStyle(root).getPropertyValue(v).trim() || '#888';
+
+    function step() {
+      ball.vy += 0.12; ball.x += ball.vx; ball.y += ball.vy;
+      if (ball.x < 10 || ball.x > W - 10) { ball.vx *= -1; ball.x = Math.min(W - 10, Math.max(10, ball.x)); }
+      if (ball.y < 10) { ball.vy = Math.abs(ball.vy); }
+      if (ball.y > H - 10) { ball.vy = -Math.abs(ball.vy) * 0.95 - 4; ball.vx += (Math.random() - 0.5) * 2; }
+      for (const b of bumpers) {
+        const dx = ball.x - b.x, dy = ball.y - b.y, d = Math.hypot(dx, dy), min = b.r + 8;
+        if (d < min) {
+          const nx = dx / d, ny = dy / d, dot = ball.vx * nx + ball.vy * ny;
+          ball.vx -= 2 * dot * nx; ball.vy -= 2 * dot * ny;
+          ball.x = b.x + nx * min; ball.y = b.y + ny * min; b.hit = 1;
+        }
+      }
+      const sp = Math.hypot(ball.vx, ball.vy), max = 7;
+      if (sp > max) { ball.vx *= max / sp; ball.vy *= max / sp; }
+      trail.push({ x: ball.x, y: ball.y }); if (trail.length > 140) trail.shift();
+    }
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = css('--bg-soft'); ctx.beginPath(); ctx.roundRect(0, 0, W, H, 18); ctx.fill();
+      ctx.strokeStyle = css('--warm'); ctx.lineWidth = 3; ctx.globalAlpha = 0.5; ctx.beginPath();
+      trail.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.stroke(); ctx.globalAlpha = 1;
+      for (const b of bumpers) {
+        ctx.fillStyle = b.hit > 0.05 ? css('--warm') : css('--accent');
+        ctx.globalAlpha = 0.55 + b.hit * 0.45; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+        b.hit *= 0.93;
+      }
+      ctx.globalAlpha = 1; ctx.fillStyle = css('--text'); ctx.beginPath(); ctx.arc(ball.x, ball.y, 8, 0, Math.PI * 2); ctx.fill();
+    }
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let visible = false;
+    new IntersectionObserver(([e]) => (visible = e.isIntersecting)).observe(canvas);
+    function loop() { if (visible || reduced) { step(); step(); draw(); } if (!reduced) requestAnimationFrame(loop); }
+    root.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach((btn) =>
+      btn.addEventListener('click', () => {
+        mode = btn.dataset.mode as typeof mode;
+        root.querySelectorAll('[data-mode]').forEach((b) => { b.classList.toggle('on', b === btn); b.setAttribute('aria-selected', String(b === btn)); });
+        caption.textContent = mode === 'focused' ? caption.dataset.f! : caption.dataset.d!;
+        layout(); if (reduced) { for (let i = 0; i < 300; i++) step(); draw(); }
+      }),
+    );
+    layout();
+    if (reduced) { for (let i = 0; i < 300; i++) step(); draw(); } else loop();
+  });
+</script>
+
+<style>
+  .toggle { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+  .toggle .on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  canvas { width: 100%; height: auto; display: block; border-radius: 18px; }
+  .caption { margin: 0.9rem 0 0; color: var(--text-soft); min-height: 3.4em; }
+</style>

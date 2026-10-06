@@ -1,0 +1,21 @@
+---
+// Root "/" — send visitors to their last chosen language, English by default.
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dinh Vu</title>
+    <script is:inline>
+      var l = 'en';
+      try { if (localStorage.getItem('lang') === 'vi') l = 'vi'; } catch (e) {}
+      location.replace('/' + l + '/');
+    </script>
+    <meta http-equiv="refresh" content="1; url=/en/" />
+    <link rel="canonical" href="/en/" />
+  </head>
+  <body style="font-family:system-ui;background:#fbf8f2;color:#1d2321">
+    <p><a href="/en/">English</a> · <a href="/vi/">Tiếng Việt</a></p>
+  </body>
+</html>

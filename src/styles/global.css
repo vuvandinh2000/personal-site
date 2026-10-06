@@ -1,0 +1,220 @@
+:root {
+  --bg: #fbf8f2;
+  --bg-soft: #f3eee4;
+  --surface: #ffffff;
+  --text: #1d2321;
+  --text-soft: #56605b;
+  --border: #e3ddd0;
+  --accent: #1f6f5c;
+  --accent-soft: #dcefe8;
+  --accent-ink: #ffffff;
+  --warm: #e07a3f;
+  --warm-soft: #fbe6d8;
+  --good: #2e8b57;
+  --bad: #c2453b;
+  --shadow: 0 1px 2px rgb(30 30 20 / 0.06), 0 6px 20px rgb(30 30 20 / 0.06);
+  --radius: 14px;
+  --font-body: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-head: 'Lora', Georgia, serif;
+  --measure: 70ch;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #141917;
+    --bg-soft: #1b211f;
+    --surface: #1f2624;
+    --text: #e9ece9;
+    --text-soft: #a6b0ab;
+    --border: #2f3835;
+    --accent: #5cc4a6;
+    --accent-soft: #1d3a32;
+    --accent-ink: #0d1412;
+    --warm: #f0a070;
+    --warm-soft: #3a2a20;
+    --good: #5cc48a;
+    --bad: #ef7d73;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 20px rgb(0 0 0 / 0.25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme='dark'] {
+  --bg: #141917;
+  --bg-soft: #1b211f;
+  --surface: #1f2624;
+  --text: #e9ece9;
+  --text-soft: #a6b0ab;
+  --border: #2f3835;
+  --accent: #5cc4a6;
+  --accent-soft: #1d3a32;
+  --accent-ink: #0d1412;
+  --warm: #f0a070;
+  --warm-soft: #3a2a20;
+  --good: #5cc48a;
+  --bad: #ef7d73;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 20px rgb(0 0 0 / 0.25);
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-head);
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+img,
+svg,
+video,
+iframe {
+  max-width: 100%;
+}
+
+code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.9em;
+  background: var(--bg-soft);
+  padding: 0.1em 0.35em;
+  border-radius: 6px;
+}
+
+.container {
+  width: min(100% - 2rem, 1080px);
+  margin-inline: auto;
+}
+.container-narrow {
+  width: min(100% - 2rem, 760px);
+  margin-inline: auto;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+  text-decoration: none;
+}
+.btn:hover {
+  border-color: var(--accent);
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.btn-primary:hover {
+  filter: brightness(1.07);
+}
+:focus-visible {
+  outline: 3px solid var(--warm);
+  outline-offset: 2px;
+}
+
+/* ---------- Widget frame used by every interactive component ---------- */
+.widget {
+  margin: 2rem 0;
+  padding: clamp(1rem, 3vw, 1.6rem);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.widget-label {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--warm);
+  margin-bottom: 0.4rem;
+}
+.widget h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+}
+.widget p:last-child {
+  margin-bottom: 0;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

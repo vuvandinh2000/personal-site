@@ -1,0 +1,120 @@
+---
+import { useTranslations, type Lang } from '../../i18n/ui';
+interface Props { lang: Lang; label?: string; preset?: '25-5' | '50-10' | 'demo' }
+const { lang, label, preset = '25-5' } = Astro.props;
+const t = useTranslations(lang);
+const s = {
+  en: { presets: 'Mode', demo: '3-min demo', tip: 'Phone in another room. One task only. When the bell rings, take the break — it is part of the method.', doneF: 'Focus done! Take a break.', doneB: 'Break over. Ready for another round?' },
+  vi: { presets: 'Chế độ', demo: 'Thử 3 phút', tip: 'Để điện thoại ở phòng khác. Chỉ làm một việc. Khi chuông reo, hãy nghỉ — nghỉ cũng là một phần của phương pháp.', doneF: 'Xong phiên tập trung! Nghỉ thôi.', doneB: 'Hết giờ nghỉ. Sẵn sàng cho vòng tiếp theo?' },
+}[lang];
+const presets = [
+  { id: '25-5', focus: 25, rest: 5, label: '25 / 5' },
+  { id: '50-10', focus: 50, rest: 10, label: '50 / 10' },
+  { id: 'demo', focus: 3, rest: 1, label: s.demo },
+];
+---
+<div class="widget pomo" data-pomo data-strings={JSON.stringify({ focus: t('ui.focus'), rest: t('ui.break'), start: t('ui.start'), pause: t('ui.pause'), doneF: s.doneF, doneB: s.doneB })}>
+  {label && <span class="widget-label">{label}</span>}
+  <div class="presets" role="radiogroup" aria-label={s.presets}>
+    {presets.map((p, i) => (
+      <button class="btn" type="button" role="radio" aria-checked={p.id === preset ? 'true' : 'false'} data-focus={p.focus} data-rest={p.rest}>{p.label}</button>
+    ))}
+  </div>
+  <div class="dial">
+    <svg viewBox="0 0 200 200" aria-hidden="true">
+      <circle cx="100" cy="100" r="88" fill="none" stroke="var(--bg-soft)" stroke-width="14" />
+      <circle class="ring" cx="100" cy="100" r="88" fill="none" stroke="var(--warm)" stroke-width="14" stroke-linecap="round" transform="rotate(-90 100 100)" data-ring />
+    </svg>
+    <div class="read">
+      <span class="phase" data-phase>{t('ui.focus')}</span>
+      <span class="time" data-time role="timer" aria-live="off">25:00</span>
+    </div>
+  </div>
+  <div class="row controls">
+    <button class="btn btn-primary" type="button" data-toggle>▶ {t('ui.start')}</button>
+    <button class="btn" type="button" data-reset>↺ {t('ui.reset')}</button>
+  </div>
+  <p class="status" data-status aria-live="polite"></p>
+  <div class="rounds"><span>{t('ui.rounds')}:</span> <span class="tomatoes" data-tomatoes></span></div>
+  <p class="tip">{s.tip}</p>
+</div>
+
+<script>
+  const C = 2 * Math.PI * 88;
+  document.querySelectorAll<HTMLElement>('[data-pomo]').forEach((root) => {
+    const s = JSON.parse(root.dataset.strings || '{}');
+    const ring = root.querySelector<SVGCircleElement>('[data-ring]')!;
+    const time = root.querySelector('[data-time]')!, phaseEl = root.querySelector('[data-phase]')!;
+    const toggle = root.querySelector<HTMLButtonElement>('[data-toggle]')!, status = root.querySelector('[data-status]')!;
+    const tomatoes = root.querySelector('[data-tomatoes]')!;
+    ring.style.strokeDasharray = String(C);
+    const initial = root.querySelector<HTMLButtonElement>('[role=radio][aria-checked=true]');
+    let focusMin = Number(initial?.dataset.focus || 25), restMin = Number(initial?.dataset.rest || 5), phase: 'focus' | 'rest' = 'focus';
+    let remaining = focusMin * 60_000, endAt = 0, running = false, timer = 0, rounds = 0;
+    const baseTitle = document.title;
+    const total = () => (phase === 'focus' ? focusMin : restMin) * 60_000;
+    const fmt = (ms: number) => { const s = Math.ceil(ms / 1000); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+    function paint() {
+      time.textContent = fmt(remaining);
+      ring.style.strokeDashoffset = String(C * (1 - remaining / total()));
+      ring.style.stroke = phase === 'focus' ? 'var(--warm)' : 'var(--accent)';
+      phaseEl.textContent = phase === 'focus' ? s.focus : s.rest;
+      toggle.textContent = running ? `❚❚ ${s.pause}` : `▶ ${s.start}`;
+      tomatoes.textContent = rounds ? '🍅'.repeat(rounds) : '—';
+      document.title = running ? `${fmt(remaining)} · ${phase === 'focus' ? s.focus : s.rest}` : baseTitle;
+    }
+    function beep() {
+      try {
+        const ac = new AudioContext();
+        [0, 0.25, 0.5].forEach((t) => {
+          const o = ac.createOscillator(), g = ac.createGain();
+          o.frequency.value = 880; o.connect(g); g.connect(ac.destination);
+          g.gain.setValueAtTime(0.0001, ac.currentTime + t);
+          g.gain.exponentialRampToValueAtTime(0.25, ac.currentTime + t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + t + 0.2);
+          o.start(ac.currentTime + t); o.stop(ac.currentTime + t + 0.22);
+        });
+      } catch {}
+    }
+    function tick() {
+      remaining = Math.max(0, endAt - Date.now());
+      if (remaining <= 0) {
+        beep();
+        if (phase === 'focus') { rounds++; phase = 'rest'; status.textContent = s.doneF; }
+        else { phase = 'focus'; status.textContent = s.doneB; }
+        remaining = total(); running = false; clearInterval(timer);
+      }
+      paint();
+    }
+    toggle.addEventListener('click', () => {
+      if (running) { running = false; clearInterval(timer); remaining = Math.max(0, endAt - Date.now()); }
+      else { running = true; status.textContent = ''; endAt = Date.now() + remaining; timer = window.setInterval(tick, 250); }
+      paint();
+    });
+    root.querySelector('[data-reset]')!.addEventListener('click', () => {
+      running = false; clearInterval(timer); phase = 'focus'; remaining = total(); status.textContent = ''; paint();
+    });
+    root.querySelectorAll<HTMLButtonElement>('[role=radio]').forEach((b) => b.addEventListener('click', () => {
+      root.querySelectorAll('[role=radio]').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+      focusMin = Number(b.dataset.focus); restMin = Number(b.dataset.rest);
+      running = false; clearInterval(timer); phase = 'focus'; remaining = total(); paint();
+    }));
+    paint();
+  });
+</script>
+
+<style>
+  .presets { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+  .presets [aria-checked='true'] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .dial { position: relative; width: min(260px, 70vw); margin: 1.4rem auto 1rem; }
+  .dial svg { display: block; width: 100%; }
+  .ring { transition: stroke-dashoffset 0.25s linear, stroke 0.3s ease; }
+  .read { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .phase { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-soft); }
+  .time { font-size: clamp(2.6rem, 9vw, 3.4rem); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .controls { justify-content: center; }
+  .status { text-align: center; font-weight: 600; color: var(--accent); min-height: 1.7em; margin: 0.6rem 0 0; }
+  .rounds { text-align: center; color: var(--text-soft); font-size: 0.95rem; }
+  .tomatoes { letter-spacing: 0.15em; }
+  .tip { margin-top: 1rem; padding: 0.8rem 1rem; background: var(--bg-soft); border-radius: 12px; font-size: 0.95rem; color: var(--text-soft); }
+</style>

@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { langs, useTranslations, localePath, formatDate, type Lang, type UIKey } from '../../../i18n/ui';
+import { getPosts, splitId, SERIES } from '../../../lib';
+
+export function getStaticPaths() {
+  return langs.flatMap((lang) => SERIES.map((series) => ({ params: { lang, series } })));
+}
+const lang = Astro.params.lang as Lang;
+const series = Astro.params.series as string;
+const t = useTranslations(lang);
+const posts = (await getPosts(lang))
+  .filter((p) => p.data.series === series)
+  .sort((a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0));
+const title = t(`series.${series}.title` as UIKey);
+const description = t(`series.${series}.description` as UIKey);
+---
+<BaseLayout lang={lang} title={title} description={description}>
+  <div class="container-narrow page">
+    <h1>{title}</h1>
+    <p class="sub">{description}</p>
+    <ol class="timeline">
+      {
+        posts.map((p, i) => (
+          <li>
+            <span class="dot">{p.data.seriesOrder ?? i + 1}</span>
+            <a href={localePath(lang, `/blog/${splitId(p.id).slug}`)}>
+              <span class="when">{formatDate(p.data.date, lang)}</span>
+              <strong>{p.data.title}</strong>
+              <span class="desc">{p.data.description}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</BaseLayout>
+<style>
+  .page { padding-top: 2.5rem; }
+  h1 { font-size: clamp(2rem, 4vw, 2.8rem); margin: 0 0 0.4rem; }
+  .sub { color: var(--text-soft); margin: 0 0 2rem; }
+  .timeline { list-style: none; padding: 0; margin: 0; border-left: 2px solid var(--border); margin-left: 18px; }
+  .timeline li { position: relative; padding: 0 0 1.5rem 2rem; }
+  .dot {
+    position: absolute; left: -19px; top: 0.2rem;
+    display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+    background: var(--accent); color: var(--accent-ink); font-weight: 700;
+  }
+  .timeline a {
+    display: grid; gap: 0.2rem; padding: 1rem 1.2rem; border-radius: var(--radius);
+    background: var(--surface); border: 1px solid var(--border); color: inherit; text-decoration: none;
+  }
+  .timeline a:hover { border-color: var(--accent); }
+  .when { font-size: 0.85rem; color: var(--warm); font-weight: 600; }
+  strong { font-family: var(--font-head); font-size: 1.2rem; }
+  .desc { color: var(--text-soft); font-size: 0.95rem; }
+</style>
