@@ -4,7 +4,7 @@
  * Usage in MDX: <Illustration name="brick-wall" caption="..." />
  */
 interface Props {
-  name: 'brain-gym' | 'feels-vs-works' | 'brick-wall' | 'zombie' | 'sleep' | 'chunk';
+  name: 'brain-gym' | 'feels-vs-works' | 'brick-wall' | 'zombie' | 'sleep' | 'chunk' | 'venn' | 'crossroads';
   caption?: string;
   labels?: string[];
 }
@@ -143,6 +143,39 @@ const { name, caption, labels = [] } = Astro.props;
           <path d="M470 100h50v50h-50Z" opacity="1" />
         </g>
         <rect x="408" y="38" width="124" height="124" rx="16" fill="none" stroke="var(--accent)" stroke-width="4" stroke-dasharray="10 8" />
+      </svg>
+    )
+  }
+  {
+    name === 'venn' && (
+      <svg viewBox="0 0 640 400" role="img" aria-label={caption ?? 'Three overlapping circles: what I love, what I am good at, what is needed'}>
+        <circle cx="250" cy="150" r="125" fill="var(--warm)" fill-opacity="0.22" stroke="var(--warm)" stroke-width="3" />
+        <circle cx="390" cy="150" r="125" fill="var(--accent)" fill-opacity="0.2" stroke="var(--accent)" stroke-width="3" />
+        <circle cx="320" cy="265" r="125" fill="#3d7fc9" fill-opacity="0.18" stroke="#3d7fc9" stroke-width="3" />
+        {[[200, 105, 0], [440, 105, 1], [320, 318, 2]].map(([x, y, k]) => (
+          <text x={x} y={y} text-anchor="middle" font-size="18" font-weight="700" fill="var(--text)">
+            {(labels[k] ?? ['What I|love', 'What I am|good at', 'What is needed|(and pays)'][k]).split('|').map((line, j) => (
+              <tspan x={x} dy={j ? 22 : 0}>{line}</tspan>
+            ))}
+          </text>
+        ))}
+        <circle cx="320" cy="190" r="34" fill="var(--surface)" stroke="var(--text)" stroke-width="3" />
+        <text x="320" y="198" text-anchor="middle" font-size="22">⭐</text>
+        <text x="320" y="245" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text)">{labels[3] ?? 'Your path'}</text>
+      </svg>
+    )
+  }
+  {
+    name === 'crossroads' && (
+      <svg viewBox="0 -24 640 284" role="img" aria-label={caption ?? 'A road splitting into several paths'}>
+        <path d="M320 250 C320 200 320 180 320 160" stroke="var(--text-soft)" stroke-width="26" stroke-linecap="round" fill="none" opacity="0.35" />
+        <path d="M320 165 C300 120 200 100 90 60" stroke="var(--warm)" stroke-width="16" stroke-linecap="round" fill="none" opacity="0.8" />
+        <path d="M320 165 C310 120 260 80 230 30" stroke="var(--accent)" stroke-width="16" stroke-linecap="round" fill="none" opacity="0.8" />
+        <path d="M320 165 C320 110 320 70 320 25" stroke="#3d7fc9" stroke-width="16" stroke-linecap="round" fill="none" opacity="0.8" />
+        <path d="M320 165 C330 120 380 80 410 30" stroke="#a35bc4" stroke-width="16" stroke-linecap="round" fill="none" opacity="0.8" />
+        <path d="M320 165 C340 120 440 100 550 60" stroke="#c97b3d" stroke-width="16" stroke-linecap="round" fill="none" opacity="0.8" />
+        <text x="80" y="45" font-size="30">🎓</text><text x="215" y="22" font-size="28">🛠️</text><text x="305" y="18" font-size="28">🎖️</text>
+        <text x="400" y="22" font-size="28">✈️</text><text x="545" y="45" font-size="30">🌏</text>
       </svg>
     )
   }

@@ -1,0 +1,79 @@
+---
+import { aboutPrompts } from '../../data/finding-your-path';
+import type { Lang } from '../../i18n/ui';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = {
+  en: { label: 'Let’s get to know each other', title: 'My card', name: 'My name', namePh: 'What should I call you?', saved: 'Saved on this device only', print: 'Print / save as PDF' },
+  vi: { label: 'Làm quen nhé', title: 'Tấm thẻ của em', name: 'Tên của em', namePh: 'Anh/chị nên gọi em là gì?', saved: 'Chỉ lưu trên thiết bị này', print: 'In / lưu PDF' },
+}[lang];
+---
+<div class="widget about" data-about>
+  <span class="widget-label">{s.label}</span>
+  <div class="grid">
+    <div class="form">
+      <label>{s.name}<input data-f="name" placeholder={s.namePh} /></label>
+      {aboutPrompts.map((p) => (
+        <label>{p.q[lang]}<textarea rows="2" data-f={p.id} placeholder={p.ph[lang]}></textarea></label>
+      ))}
+    </div>
+    <article class="card" aria-live="polite">
+      <p class="kicker">{s.title}</p>
+      <h4 data-out="name">…</h4>
+      <dl>
+        {aboutPrompts.map((p) => (
+          <div><dt>{p.q[lang]}</dt><dd data-out={p.id}>—</dd></div>
+        ))}
+      </dl>
+    </article>
+  </div>
+  <div class="row foot">
+    <span class="saved">✓ {s.saved}</span>
+    <button class="btn" type="button" data-print>🖨 {s.print}</button>
+  </div>
+</div>
+
+<script>
+  const KEY = 'path.about';
+  document.querySelectorAll<HTMLElement>('[data-about]').forEach((root) => {
+    let st: Record<string, string> = {};
+    try { st = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch {}
+    const fields = [...root.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-f]')];
+    const paint = () => fields.forEach((f) => {
+      const out = root.querySelector(`[data-out="${f.dataset.f}"]`);
+      if (out) out.textContent = f.value.trim() || (f.dataset.f === 'name' ? '…' : '—');
+    });
+    fields.forEach((f) => {
+      f.value = st[f.dataset.f!] || '';
+      f.addEventListener('input', () => { st[f.dataset.f!] = f.value; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch {} paint(); });
+    });
+    paint();
+    root.querySelector('[data-print]')!.addEventListener('click', () => {
+      document.body.classList.add('print-about'); root.classList.add('printing');
+      window.print();
+      setTimeout(() => { document.body.classList.remove('print-about'); root.classList.remove('printing'); }, 500);
+    });
+  });
+</script>
+
+<style>
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; align-items: start; }
+  label { display: grid; gap: 0.3rem; font-weight: 600; font-size: 0.92rem; margin-bottom: 0.7rem; }
+  input, textarea { font: inherit; font-weight: 400; padding: 0.55rem 0.8rem; border-radius: 10px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); resize: vertical; min-height: 44px; }
+  input:focus, textarea:focus { border-color: var(--accent); outline: none; }
+  .card { position: sticky; top: 5.5rem; padding: 1.3rem 1.4rem; border-radius: 18px; color: #fdf8ef;
+    background: linear-gradient(140deg, #1f6f5c, #14473b); box-shadow: var(--shadow); }
+  .kicker { margin: 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #f2b98f; }
+  h4 { font-family: var(--font-head); font-size: 1.7rem; margin: 0.2rem 0 0.8rem; }
+  dl { margin: 0; display: grid; gap: 0.7rem; }
+  dt { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #f2b98f; font-weight: 700; }
+  dd { margin: 0.15rem 0 0; white-space: pre-wrap; font-size: 0.97rem; }
+  .foot { justify-content: space-between; margin-top: 0.5rem; }
+  .saved { font-size: 0.8rem; color: var(--text-soft); }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } .card { position: static; } }
+  @media print {
+    :global(body.print-about) :global(*) { visibility: hidden; }
+    :global(body.print-about) .printing .card, :global(body.print-about) .printing .card :global(*) { visibility: visible; }
+    :global(body.print-about) .printing .card { position: fixed; inset: 0; margin: auto; width: 16cm; height: fit-content; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+</style>

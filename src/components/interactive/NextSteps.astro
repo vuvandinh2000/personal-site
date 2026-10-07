@@ -1,0 +1,62 @@
+---
+import { nextSteps } from '../../data/finding-your-path';
+import type { Lang } from '../../i18n/ui';
+interface Props { lang: Lang; storageKey?: string }
+const { lang, storageKey = 'path.next' } = Astro.props;
+const s = {
+  en: { label: 'Before next month', title: 'My next steps', add: 'Add my own step', ph: 'Something else I will do…', saved: 'Saved on this device only' },
+  vi: { label: 'Trước buổi sau', title: 'Các bước tiếp theo của em', add: 'Thêm bước của riêng em', ph: 'Một việc khác em sẽ làm…', saved: 'Chỉ lưu trên thiết bị này' },
+}[lang];
+---
+<div class="widget next" data-nextsteps data-key={storageKey}>
+  <span class="widget-label">{s.label}</span>
+  <h3>{s.title}</h3>
+  <ul class="list" data-list>
+    {nextSteps.map((x) => (
+      <li><label><input type="checkbox" value={x.id} /><span>{x.text[lang]}</span></label></li>
+    ))}
+  </ul>
+  <form class="add" data-add>
+    <input name="custom" placeholder={s.ph} aria-label={s.add} />
+    <button class="btn" type="submit">+ {s.add}</button>
+  </form>
+  <p class="saved">✓ {s.saved}</p>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-nextsteps]').forEach((root) => {
+    const key = root.dataset.key || 'path.next';
+    const list = root.querySelector<HTMLUListElement>('[data-list]')!;
+    let st: { done: string[]; custom: string[] } = { done: [], custom: [] };
+    try { st = { ...st, ...JSON.parse(localStorage.getItem(key) || '{}') }; } catch {}
+    const save = () => { try { localStorage.setItem(key, JSON.stringify(st)); } catch {} };
+    const addItem = (text: string, id: string) => {
+      const li = document.createElement('li');
+      li.innerHTML = '<label><input type="checkbox" /><span></span></label>';
+      li.querySelector('input')!.value = id; li.querySelector('span')!.textContent = text; list.append(li);
+    };
+    st.custom.forEach((t, i) => addItem(t, 'c' + i));
+    const sync = () => list.querySelectorAll<HTMLInputElement>('input').forEach((b) => (b.checked = st.done.includes(b.value)));
+    sync();
+    list.addEventListener('change', (e) => {
+      const b = e.target as HTMLInputElement;
+      st.done = b.checked ? [...st.done, b.value] : st.done.filter((x) => x !== b.value); save();
+    });
+    root.querySelector<HTMLFormElement>('[data-add]')!.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const inp = (e.target as HTMLFormElement).elements.namedItem('custom') as HTMLInputElement;
+      const t = inp.value.trim(); if (!t) return;
+      st.custom.push(t); addItem(t, 'c' + (st.custom.length - 1)); inp.value = ''; save();
+    });
+  });
+</script>
+
+<style>
+  .list { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: 0.5rem; }
+  .list :global(label) { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.7rem 0.9rem; border-radius: 12px; background: var(--bg); border: 1.5px solid var(--border); cursor: pointer; }
+  .list :global(input) { width: 22px; height: 22px; margin-top: 0.15rem; accent-color: var(--accent); flex: none; }
+  .list :global(input:checked + span) { text-decoration: line-through; color: var(--text-soft); }
+  .add { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .add input { flex: 1; min-width: 200px; font: inherit; padding: 0.55rem 0.8rem; border-radius: 10px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); min-height: 44px; }
+  .saved { font-size: 0.8rem; color: var(--text-soft); margin: 0.6rem 0 0; }
+</style>

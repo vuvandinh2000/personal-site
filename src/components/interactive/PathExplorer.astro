@@ -1,0 +1,118 @@
+---
+import { paths, priorities } from '../../data/finding-your-path';
+import type { Lang } from '../../i18n/ui';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = {
+  en: {
+    label: 'What matters to you?', title: 'Match the paths to your priorities',
+    intro: 'Slide each one: how important is it to you right now? The paths re-order as you move them.',
+    levels: ['Not important', 'A little', 'Important', 'Very important'],
+    fit: 'fit', details: 'Details ↓', note: 'A rough guide to start a conversation — not a decision. Every person and family is different.',
+  },
+  vi: {
+    label: 'Điều gì quan trọng với em?', title: 'So con đường với ưu tiên của em',
+    intro: 'Kéo từng thanh: điều này quan trọng với em đến đâu lúc này? Các con đường sẽ tự sắp xếp lại.',
+    levels: ['Không quan trọng', 'Hơi quan trọng', 'Quan trọng', 'Rất quan trọng'],
+    fit: 'phù hợp', details: 'Chi tiết ↓', note: 'Chỉ là gợi ý để bắt đầu trò chuyện — không phải quyết định. Mỗi người, mỗi gia đình mỗi khác.',
+  },
+}[lang];
+const data = paths.map((p) => ({ id: p.id, icon: p.icon, name: p.name[lang], score: p.score }));
+---
+<div class="widget explorer" data-explorer data-paths={JSON.stringify(data)} data-levels={JSON.stringify(s.levels)} data-fit={s.fit}>
+  <span class="widget-label">{s.label}</span>
+  <h3>{s.title}</h3>
+  <p class="intro">{s.intro}</p>
+  <div class="grid">
+    <div class="sliders">
+      {priorities.map((p) => (
+        <label class="slider">
+          <span class="top"><strong>{p.label[lang]}</strong><em data-level-for={p.id}>{s.levels[1]}</em></span>
+          <input type="range" min="0" max="3" step="1" value="1" data-priority={p.id} aria-describedby={`hint-${p.id}`} />
+          <span class="hint" id={`hint-${p.id}`}>{p.hint[lang]}</span>
+        </label>
+      ))}
+    </div>
+    <ol class="ranking" data-ranking aria-live="polite"></ol>
+  </div>
+  <p class="note">{s.note}</p>
+</div>
+
+<script>
+  type P = { id: string; icon: string; name: string; score: Record<string, number> };
+  const KEY = 'path.priorities';
+  document.querySelectorAll<HTMLElement>('[data-explorer]').forEach((root) => {
+    const paths = JSON.parse(root.dataset.paths || '[]') as P[];
+    const levels = JSON.parse(root.dataset.levels || '[]') as string[];
+    const fitWord = root.dataset.fit || 'fit';
+    const sliders = [...root.querySelectorAll<HTMLInputElement>('[data-priority]')];
+    const list = root.querySelector<HTMLOListElement>('[data-ranking]')!;
+    let saved: Record<string, number> = {};
+    try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch {}
+    sliders.forEach((sl) => { if (saved[sl.dataset.priority!] !== undefined) sl.value = String(saved[sl.dataset.priority!]); });
+
+    // Keep DOM nodes so re-ordering animates (FLIP).
+    const items = new Map<string, HTMLLIElement>();
+    paths.forEach((p) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<a href="#path-${p.id}"><span class="ic"></span><span class="nm"></span><span class="pct"></span><span class="bar"><span></span></span></a>`;
+      li.querySelector('.ic')!.textContent = p.icon;
+      li.querySelector('.nm')!.textContent = p.name;
+      items.set(p.id, li); list.append(li);
+    });
+
+    function render() {
+      const w: Record<string, number> = {};
+      sliders.forEach((sl) => {
+        w[sl.dataset.priority!] = Number(sl.value);
+        root.querySelector(`[data-level-for="${sl.dataset.priority}"]`)!.textContent = levels[Number(sl.value)];
+      });
+      try { localStorage.setItem(KEY, JSON.stringify(w)); } catch {}
+      const total = Object.values(w).reduce((a, b) => a + b, 0) || 1;
+      const ranked = paths
+        .map((p) => ({ p, fit: Math.round((Object.keys(w).reduce((a, k) => a + w[k] * (p.score[k] ?? 0), 0) / (3 * total)) * 100) }))
+        .sort((a, b) => b.fit - a.fit);
+      const before = new Map([...items].map(([id, li]) => [id, li.getBoundingClientRect().top]));
+      ranked.forEach(({ p, fit }, i) => {
+        const li = items.get(p.id)!;
+        li.classList.toggle('best', i === 0);
+        li.querySelector('.pct')!.textContent = `${fit}% ${fitWord}`;
+        (li.querySelector('.bar span') as HTMLElement).style.width = fit + '%';
+        list.append(li);
+      });
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        items.forEach((li, id) => {
+          const dy = (before.get(id) ?? 0) - li.getBoundingClientRect().top;
+          if (dy) li.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 280, easing: 'ease-out' });
+        });
+      }
+    }
+    sliders.forEach((sl) => sl.addEventListener('input', render));
+    render();
+  });
+</script>
+
+<style>
+  .intro { color: var(--text-soft); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
+  .slider { display: block; margin-bottom: 0.9rem; }
+  .top { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.95rem; }
+  .top em { font-style: normal; color: var(--warm); font-weight: 600; font-size: 0.85rem; white-space: nowrap; }
+  input[type='range'] { width: 100%; accent-color: var(--accent); height: 28px; }
+  .hint { display: block; font-size: 0.8rem; color: var(--text-soft); margin-top: -0.2rem; }
+  .ranking { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; position: relative; }
+  .ranking :global(li a) {
+    display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: 'ic nm pct' 'bar bar bar';
+    gap: 0.2rem 0.6rem; align-items: center; padding: 0.7rem 0.9rem; border-radius: 12px;
+    background: var(--bg); border: 1.5px solid var(--border); color: var(--text); text-decoration: none;
+  }
+  .ranking :global(li a:hover) { border-color: var(--accent); }
+  .ranking :global(li.best a) { border-color: var(--accent); background: var(--accent-soft); }
+  .ranking :global(.ic) { grid-area: ic; font-size: 1.3rem; }
+  .ranking :global(.nm) { grid-area: nm; font-weight: 600; font-size: 0.95rem; }
+  .ranking :global(.pct) { grid-area: pct; font-size: 0.85rem; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+  .ranking :global(.bar) { grid-area: bar; height: 6px; border-radius: 99px; background: var(--bg-soft); overflow: hidden; }
+  .ranking :global(.bar span) { display: block; height: 100%; background: var(--accent); transition: width 0.3s ease; }
+  .note { font-size: 0.85rem; color: var(--text-soft); margin-top: 1rem; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+</style>

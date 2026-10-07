@@ -1,0 +1,93 @@
+---
+import { paths } from '../data/finding-your-path';
+import type { Lang } from '../i18n/ui';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = {
+  en: { time: 'How long', cost: 'Cost', pros: 'Good', cons: 'Watch out', fits: 'Might suit you if…', step: 'First step', src: 'Sources' },
+  vi: { time: 'Thời gian', cost: 'Chi phí', pros: 'Điểm mạnh', cons: 'Cần lưu ý', fits: 'Có thể hợp với em nếu…', step: 'Bước đầu tiên', src: 'Nguồn' },
+}[lang];
+---
+<div class="paths">
+  {
+    paths.map((p, i) => (
+      <details class="path" id={`path-${p.id}`} open={i === 0}>
+        <summary>
+          <span class="ic" aria-hidden="true">{p.icon}</span>
+          <span class="nm">
+            <strong>{p.name[lang]}</strong>
+            <span class="what">{p.what[lang]}</span>
+          </span>
+        </summary>
+        <div class="body">
+          <dl class="facts">
+            <div><dt>{s.time}</dt><dd>{p.time[lang]}</dd></div>
+            <div><dt>{s.cost}</dt><dd>{p.cost[lang]}</dd></div>
+          </dl>
+          <div class="cols">
+            <div class="pros">
+              <h4>✓ {s.pros}</h4>
+              <ul>{p.pros.map((x) => <li>{x[lang]}</li>)}</ul>
+            </div>
+            <div class="cons">
+              <h4>! {s.cons}</h4>
+              <ul>{p.cons.map((x) => <li>{x[lang]}</li>)}</ul>
+            </div>
+          </div>
+          <p class="fits"><strong>{s.fits}</strong> {p.fits[lang]}</p>
+          <p class="step"><strong>→ {s.step}:</strong> {p.firstStep[lang]}</p>
+          {p.sources && (
+            <p class="src">
+              {s.src}:{' '}
+              {p.sources.map((x, k) => (
+                <>
+                  {k > 0 && ' · '}
+                  <a href={x.url} target="_blank" rel="noopener">{x.label}</a>
+                </>
+              ))}
+            </p>
+          )}
+        </div>
+      </details>
+    ))
+  }
+</div>
+
+<script>
+  function openTarget() {
+    const el = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+    if (el instanceof HTMLDetailsElement) el.open = true;
+  }
+  window.addEventListener('hashchange', openTarget);
+  openTarget();
+</script>
+
+<style>
+  .paths { display: grid; gap: 0.8rem; margin: 1.5rem 0 2rem; }
+  .path { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); scroll-margin-top: 5rem; }
+  .path[open] { border-color: var(--accent); box-shadow: var(--shadow); }
+  .path:target { outline: 3px solid var(--warm); outline-offset: 2px; }
+  summary { display: flex; gap: 0.9rem; align-items: flex-start; padding: 1rem 1.2rem; cursor: pointer; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; margin-left: auto; font-size: 1.4rem; line-height: 1; color: var(--text-soft); }
+  .path[open] summary::after { content: '–'; }
+  .ic { font-size: 1.8rem; line-height: 1.2; }
+  .nm { display: grid; gap: 0.15rem; }
+  .nm strong { font-family: var(--font-head); font-size: 1.2rem; }
+  .what { color: var(--text-soft); font-size: 0.95rem; }
+  .body { padding: 0 1.2rem 1.2rem; }
+  .facts { display: grid; grid-template-columns: 1fr 2fr; gap: 0.6rem; margin: 0 0 1rem; }
+  .facts div { background: var(--bg-soft); border-radius: 10px; padding: 0.6rem 0.8rem; }
+  dt { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warm); }
+  dd { margin: 0.2rem 0 0; font-size: 0.95rem; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  h4 { margin: 0 0 0.3rem; font-size: 0.95rem; font-family: var(--font-body); }
+  .pros h4 { color: var(--good); }
+  .cons h4 { color: var(--bad); }
+  ul { margin: 0; padding-left: 1.1rem; font-size: 0.95rem; }
+  li + li { margin-top: 0.25rem; }
+  .fits, .step { margin: 0.8rem 0 0; font-size: 0.97rem; }
+  .step { padding: 0.7rem 0.9rem; border-radius: 10px; background: var(--accent-soft); }
+  .src { font-size: 0.8rem; color: var(--text-soft); margin: 0.8rem 0 0; }
+  @media (max-width: 620px) { .cols, .facts { grid-template-columns: 1fr; } }
+</style>

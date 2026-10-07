@@ -1,0 +1,200 @@
+---
+import { riasecItems, riasecTypes, type Riasec } from '../../data/finding-your-path';
+import type { Lang } from '../../i18n/ui';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = {
+  en: {
+    label: 'Self-discovery', title: 'The Holland interest test (RIASEC)',
+    intro: 'Answer honestly — there are no right answers. Think about what you enjoy, not what you are “supposed” to like.',
+    no: 'Not me', some: 'Sometimes', yes: 'That’s me', page: 'Page', of: 'of', next: 'Next', back: 'Back', see: 'See my result',
+    code: 'Your Holland code', top: 'Your top 3 types', majors: 'Majors to explore', jobs: 'Jobs to explore',
+    again: 'Retake the test', note: 'This is a starting point for conversation, not a verdict. People change — and most people are a mix of types.',
+    answered: 'answered',
+  },
+  vi: {
+    label: 'Khám phá bản thân', title: 'Trắc nghiệm sở thích nghề nghiệp Holland (RIASEC)',
+    intro: 'Trả lời thật lòng — không có đáp án đúng sai. Hãy nghĩ về điều em thật sự thích, không phải điều em “nên” thích.',
+    no: 'Không giống mình', some: 'Thỉnh thoảng', yes: 'Đúng là mình', page: 'Trang', of: '/', next: 'Tiếp', back: 'Quay lại', see: 'Xem kết quả',
+    code: 'Mã Holland của em', top: '3 nhóm nổi bật nhất', majors: 'Ngành nên tìm hiểu', jobs: 'Nghề nên tìm hiểu',
+    again: 'Làm lại', note: 'Đây là điểm khởi đầu để trò chuyện, không phải kết luận. Con người thay đổi — và phần lớn chúng ta là sự pha trộn của nhiều nhóm.',
+    answered: 'câu đã trả lời',
+  },
+}[lang];
+
+// Interleave R I A S E C so every page has one of each type.
+const order: Riasec[] = ['R', 'I', 'A', 'S', 'E', 'C'];
+const byType = Object.fromEntries(order.map((t) => [t, riasecItems.filter((i) => i.type === t)]));
+const items = Array.from({ length: 5 }, (_, k) => order.map((t) => byType[t][k])).flat();
+const pages = Array.from({ length: 5 }, (_, p) => items.slice(p * 6, p * 6 + 6));
+const types = Object.fromEntries(
+  order.map((t) => [t, { name: riasecTypes[t].name[lang], nick: riasecTypes[t].nick[lang], desc: riasecTypes[t].desc[lang], majors: riasecTypes[t].majors[lang], jobs: riasecTypes[t].jobs[lang], color: riasecTypes[t].color }]),
+);
+---
+<div class="widget holland" data-holland data-types={JSON.stringify(types)} data-strings={JSON.stringify(s)}>
+  <span class="widget-label">{s.label}</span>
+  <h3>{s.title}</h3>
+  <p class="intro">{s.intro}</p>
+
+  <div data-questions>
+    <div class="progress"><span data-bar></span></div>
+    <p class="count"><span data-answered>0</span>/30 {s.answered}</p>
+    {
+      pages.map((page, p) => (
+        <ol class="page" data-page={p} hidden={p !== 0} start={p * 6 + 1}>
+          {page.map((item, k) => (
+            <li class="q" data-q={p * 6 + k} data-type={item.type}>
+              <p>{item.text[lang]}</p>
+              <div class="opts" role="radiogroup">
+                <button type="button" role="radio" aria-checked="false" data-v="0">{s.no}</button>
+                <button type="button" role="radio" aria-checked="false" data-v="1">{s.some}</button>
+                <button type="button" role="radio" aria-checked="false" data-v="2">{s.yes}</button>
+              </div>
+            </li>
+          ))}
+        </ol>
+      ))
+    }
+    <div class="row nav">
+      <button class="btn" type="button" data-back disabled>← {s.back}</button>
+      <span class="pg">{s.page} <span data-pg>1</span> {s.of} 5</span>
+      <button class="btn btn-primary" type="button" data-next>{s.next} →</button>
+    </div>
+  </div>
+
+  <div class="result" data-result hidden>
+    <p class="code-label">{s.code}</p>
+    <p class="code" data-code></p>
+    <svg viewBox="0 0 640 230" role="img" aria-label={s.code} data-chart></svg>
+    <h4>{s.top}</h4>
+    <div class="types" data-types-out></div>
+    <p class="note">{s.note}</p>
+    <button class="btn" type="button" data-again>↺ {s.again}</button>
+  </div>
+</div>
+
+<script>
+  type Info = { name: string; nick: string; desc: string; majors: string; jobs: string; color: string };
+  const KEY = 'path.holland';
+  const ORDER = ['R', 'I', 'A', 'S', 'E', 'C'];
+  document.querySelectorAll<HTMLElement>('[data-holland]').forEach((root) => {
+    const types = JSON.parse(root.dataset.types || '{}') as Record<string, Info>;
+    const s = JSON.parse(root.dataset.strings || '{}');
+    const qs = [...root.querySelectorAll<HTMLElement>('[data-q]')];
+    const pages = [...root.querySelectorAll<HTMLElement>('[data-page]')];
+    const next = root.querySelector<HTMLButtonElement>('[data-next]')!;
+    const back = root.querySelector<HTMLButtonElement>('[data-back]')!;
+    const questions = root.querySelector<HTMLElement>('[data-questions]')!;
+    const result = root.querySelector<HTMLElement>('[data-result]')!;
+    let answers: Record<string, number> = {};
+    try { answers = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch {}
+    let page = 0;
+
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(answers)); } catch {} };
+    const pageDone = (p: number) => qs.slice(p * 6, p * 6 + 6).every((q) => answers[q.dataset.q!] !== undefined);
+    function paint() {
+      qs.forEach((q) => q.querySelectorAll<HTMLButtonElement>('[data-v]').forEach((b) =>
+        b.setAttribute('aria-checked', String(answers[q.dataset.q!] === Number(b.dataset.v)))));
+      const n = Object.keys(answers).length;
+      root.querySelector('[data-answered]')!.textContent = String(n);
+      root.querySelector<HTMLElement>('[data-bar]')!.style.width = (n / 30) * 100 + '%';
+      pages.forEach((pg, i) => (pg.hidden = i !== page));
+      root.querySelector('[data-pg]')!.textContent = String(page + 1);
+      back.disabled = page === 0;
+      next.disabled = !pageDone(page);
+      next.textContent = page === 4 ? `✓ ${s.see}` : `${s.next} →`;
+    }
+    qs.forEach((q) => q.querySelectorAll<HTMLButtonElement>('[data-v]').forEach((b) =>
+      b.addEventListener('click', () => { answers[q.dataset.q!] = Number(b.dataset.v); save(); paint(); })));
+    back.addEventListener('click', () => { page = Math.max(0, page - 1); paint(); });
+    next.addEventListener('click', () => {
+      if (page < 4) { page++; paint(); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      else showResult();
+    });
+    root.querySelector('[data-again]')!.addEventListener('click', () => {
+      answers = {}; save(); page = 0; result.hidden = true; questions.hidden = false; paint();
+      window.dispatchEvent(new CustomEvent('holland-change', { detail: '' }));
+    });
+
+    function scores() {
+      const sc: Record<string, number> = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
+      qs.forEach((q) => (sc[q.dataset.type!] += answers[q.dataset.q!] ?? 0));
+      return sc;
+    }
+    function showResult() {
+      const sc = scores();
+      const ranked = [...ORDER].sort((a, b) => sc[b] - sc[a] || ORDER.indexOf(a) - ORDER.indexOf(b));
+      const code = ranked.slice(0, 3).join('');
+      try { localStorage.setItem('path.hollandCode', code); } catch {}
+      root.querySelector('[data-code]')!.textContent = code;
+      // bar chart, sorted, top 3 coloured
+      const svg = root.querySelector('[data-chart]')!;
+      const ns = 'http://www.w3.org/2000/svg';
+      const el = (t: string, a: Record<string, string | number>, txt?: string) => {
+        const e = document.createElementNS(ns, t); Object.entries(a).forEach(([k, v]) => e.setAttribute(k, String(v)));
+        if (txt !== undefined) e.textContent = txt; return e;
+      };
+      svg.replaceChildren();
+      ranked.forEach((t, i) => {
+        const y = 8 + i * 36, w = (sc[t] / 10) * 400;
+        const top = i < 3;
+        svg.append(el('text', { x: 0, y: y + 20, 'font-size': 15, 'font-weight': 700, fill: 'var(--text)' }, t));
+        svg.append(el('text', { x: 22, y: y + 20, 'font-size': 14, fill: 'var(--text-soft)' }, types[t].name));
+        svg.append(el('rect', { x: 200, y: y + 4, width: 400, height: 22, rx: 6, fill: 'var(--bg-soft)' }));
+        svg.append(el('rect', { x: 200, y: y + 4, width: Math.max(w, 2), height: 22, rx: 6, fill: top ? types[t].color : 'var(--text-soft)', 'fill-opacity': top ? 0.9 : 0.35 }));
+        svg.append(el('text', { x: 200 + Math.max(w, 2) + 8, y: y + 20, 'font-size': 13, fill: 'var(--text-soft)' }, `${sc[t]}/10`));
+      });
+      const out = root.querySelector('[data-types-out]')!;
+      out.replaceChildren(...ranked.slice(0, 3).map((t, i) => {
+        const d = document.createElement('div'); d.className = 'type'; d.style.setProperty('--c', types[t].color);
+        d.innerHTML = `<p class="t"><span class="letter"></span><span><strong class="nm"></strong><span class="nick"></span></span></p>
+          <p class="desc"></p><p><b class="lm"></b> <span class="mj"></span></p><p><b class="lj"></b> <span class="jb"></span></p>`;
+        d.querySelector('.letter')!.textContent = `${i + 1}. ${t}`;
+        d.querySelector('.nm')!.textContent = types[t].name;
+        d.querySelector('.nick')!.textContent = ` · ${types[t].nick}`;
+        d.querySelector('.desc')!.textContent = types[t].desc;
+        d.querySelector('.lm')!.textContent = s.majors + ':';
+        d.querySelector('.mj')!.textContent = types[t].majors;
+        d.querySelector('.lj')!.textContent = s.jobs + ':';
+        d.querySelector('.jb')!.textContent = types[t].jobs;
+        return d;
+      }));
+      questions.hidden = true; result.hidden = false;
+      window.dispatchEvent(new CustomEvent('holland-change', { detail: code }));
+    }
+    paint();
+    if (Object.keys(answers).length === 30) showResult();
+  });
+</script>
+
+<style>
+  .intro { color: var(--text-soft); }
+  .progress { height: 8px; background: var(--bg-soft); border-radius: 99px; overflow: hidden; }
+  .progress span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.3s ease; }
+  .count { font-size: 0.85rem; color: var(--text-soft); margin: 0.4rem 0 0.6rem; }
+  .page { list-style: none; padding: 0; margin: 0; counter-reset: q; }
+  .q { padding: 0.9rem 0; border-bottom: 1px solid var(--border); }
+  .q p { margin: 0 0 0.6rem; font-weight: 500; }
+  .opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
+  .opts button {
+    min-height: 44px; padding: 0.4rem 0.5rem; border-radius: 10px; border: 1.5px solid var(--border);
+    background: var(--bg); color: var(--text); font: inherit; font-size: 0.9rem; cursor: pointer;
+  }
+  .opts button:hover { border-color: var(--accent); }
+  .opts button[aria-checked='true'] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .nav { justify-content: space-between; margin-top: 1rem; }
+  .pg { color: var(--text-soft); font-size: 0.9rem; }
+  .code-label { margin: 0; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.8rem; font-weight: 700; }
+  .code { font-family: var(--font-head); font-size: 3rem; font-weight: 700; letter-spacing: 0.15em; margin: 0 0 0.5rem; color: var(--accent); }
+  svg { width: 100%; height: auto; margin-bottom: 1rem; font-family: var(--font-body); }
+  h4 { font-family: var(--font-head); font-size: 1.15rem; margin: 0.5rem 0; }
+  .types { display: grid; gap: 0.8rem; }
+  .types :global(.type) { border-left: 5px solid var(--c); background: var(--bg-soft); border-radius: 0 12px 12px 0; padding: 0.8rem 1rem; }
+  .types :global(.type p) { margin: 0.25rem 0; font-size: 0.97rem; }
+  .types :global(.t) { display: flex; gap: 0.6rem; align-items: baseline; }
+  .types :global(.letter) { font-weight: 700; color: var(--c); font-size: 1.1rem; }
+  .types :global(.nick) { color: var(--text-soft); }
+  .types :global(.desc) { font-style: italic; }
+  .note { font-size: 0.9rem; color: var(--text-soft); margin-top: 1rem; }
+  @media (max-width: 520px) { .opts button { font-size: 0.8rem; } }
+</style>

@@ -1,0 +1,52 @@
+---
+/** Static bilingual lists for the career session: timeline | scams | schools */
+import { timeline, scamFlags, schools } from '../data/finding-your-path';
+import type { Lang } from '../i18n/ui';
+interface Props { lang: Lang; kind: 'timeline' | 'scams' | 'schools' }
+const { lang, kind } = Astro.props;
+const s = {
+  en: { school: 'School', where: 'Where', majors: 'Majors to look at', check: 'Admission plans change every year — always check the school’s official 2027 plan.' },
+  vi: { school: 'Trường', where: 'Ở đâu', majors: 'Ngành nên xem', check: 'Đề án tuyển sinh thay đổi mỗi năm — luôn kiểm tra đề án 2027 chính thức của trường.' },
+}[lang];
+---
+{
+  kind === 'timeline' && (
+    <ol class="tl">
+      {timeline.map((t) => (
+        <li><span class="when">{t.when[lang]}</span><span class="what">{t.what[lang]}</span></li>
+      ))}
+    </ol>
+  )
+}
+{
+  kind === 'scams' && (
+    <ul class="scams">
+      {scamFlags.map((x) => <li><span aria-hidden="true">🚩</span>{x[lang]}</li>)}
+    </ul>
+  )
+}
+{
+  kind === 'schools' && (
+    <>
+      <table class="schools">
+        <thead><tr><th>{s.school}</th><th>{s.where}</th><th>{s.majors}</th></tr></thead>
+        <tbody>
+          {schools.map((x) => (
+            <tr><td><a href={x.url} target="_blank" rel="noopener">{x.name}</a></td><td>{x.where[lang]}</td><td>{x.majors[lang]}</td></tr>
+          ))}
+        </tbody>
+      </table>
+      <p class="check">{s.check}</p>
+    </>
+  )
+}
+<style>
+  .tl { list-style: none; padding: 0; margin: 1.5rem 0; border-left: 3px solid var(--accent-soft); margin-left: 8px; }
+  .tl li { position: relative; padding: 0 0 1.2rem 1.4rem; display: grid; gap: 0.15rem; }
+  .tl li::before { content: ''; position: absolute; left: -10px; top: 0.35rem; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); border: 3px solid var(--bg); }
+  .when { font-weight: 700; color: var(--warm); font-size: 0.95rem; }
+  .what { max-width: 60ch; }
+  .scams { list-style: none; padding: 1rem 1.2rem; margin: 1.5rem 0; background: var(--warm-soft); border-radius: var(--radius); display: grid; gap: 0.6rem; }
+  .scams li { display: flex; gap: 0.6rem; }
+  .check { font-size: 0.85rem; color: var(--text-soft); }
+</style>
