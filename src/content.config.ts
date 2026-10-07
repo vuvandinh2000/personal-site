@@ -22,4 +22,10 @@ const posts = defineCollection({
   }),
 });
 
-export const collections = { posts };
+/** Intro text for a series page: src/content/series/<lang>/<series-id>.mdx */
+const series = defineCollection({
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/series' }),
+  schema: z.object({ title: z.string().optional() }),
+});
+
+export const collections = { posts, series };
