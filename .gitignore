@@ -5,3 +5,6 @@ dist/
 .env
 .env.*
 .DS_Store
+
+# local previews
+Claude outputs/

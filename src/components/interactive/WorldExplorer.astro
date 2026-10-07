@@ -1,0 +1,227 @@
+---
+/**
+ * "Explore the world" mini-game: pick a destination, read its boarding pass,
+ * answer one question to earn a passport stamp. Progress is saved on the device.
+ */
+import { destinations, interests } from '../../data/world';
+import type { Lang } from '../../i18n/ui';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = {
+  en: {
+    label: 'Mini-game', title: 'Explore the world', intro: 'Pick a destination, read its boarding pass, and answer one question to earn a stamp in your passport.',
+    filter: 'What are you into?', all: 'All', passport: 'Passport', stamps: 'stamps',
+    needs: 'Who they need', study: 'Study there', work: 'Work there', language: 'Language', money: 'Money', fun: 'Fun fact',
+    stampQ: 'Earn the stamp', correct: 'Stamped! ', wrong: 'Not quite — read the boarding pass again and try another answer.',
+    stamped: 'Stamped', sources: 'Sources', done: 'You visited every destination — you are a real explorer! Which one would you actually go to, and why?',
+    reset: 'Reset passport', pick: 'Pick a destination above to start your trip.',
+  },
+  vi: {
+    label: 'Trò chơi', title: 'Khám phá thế giới', intro: 'Chọn một điểm đến, đọc "thẻ lên máy bay", rồi trả lời một câu hỏi để nhận con dấu vào hộ chiếu.',
+    filter: 'Em quan tâm lĩnh vực nào?', all: 'Tất cả', passport: 'Hộ chiếu', stamps: 'con dấu',
+    needs: 'Đang cần ai', study: 'Đi học', work: 'Đi làm', language: 'Ngôn ngữ', money: 'Thu nhập', fun: 'Chuyện thú vị',
+    stampQ: 'Nhận con dấu', correct: 'Đã đóng dấu! ', wrong: 'Chưa đúng — đọc lại thẻ lên máy bay rồi chọn đáp án khác nhé.',
+    stamped: 'Đã có dấu', sources: 'Nguồn', done: 'Em đã đi hết các điểm đến — đúng là nhà thám hiểm! Nếu được chọn thật, em sẽ đi đâu, và vì sao?',
+    reset: 'Làm mới hộ chiếu', pick: 'Chọn một điểm đến ở trên để bắt đầu chuyến đi.',
+  },
+}[lang];
+const total = destinations.length;
+---
+<div class="widget world" data-world data-total={total}>
+  <div class="top">
+    <div>
+      <span class="widget-label">{s.label}</span>
+      <h3>{s.title}</h3>
+      <p class="intro">{s.intro}</p>
+    </div>
+    <div class="passport" aria-live="polite">
+      <span class="p-title">{s.passport}</span>
+      <div class="slots">
+        {destinations.map((d) => (
+          <span class="slot" data-slot={d.id} style={`--c:${d.color}`} title={d.name[lang]}><span>{d.code}</span></span>
+        ))}
+      </div>
+      <span class="p-count"><b data-count>0</b>/{total} {s.stamps}</span>
+    </div>
+  </div>
+
+  <p class="filter-label">{s.filter}</p>
+  <div class="chips" role="group" aria-label={s.filter}>
+    <button type="button" class="chip on" data-interest="">{s.all}</button>
+    {interests.map((i) => (
+      <button type="button" class="chip" data-interest={i.id}><span aria-hidden="true">{i.icon}</span> {i.label[lang]}</button>
+    ))}
+  </div>
+
+  <div class="board">
+    {destinations.map((d) => (
+      <button type="button" class="dest" data-dest={d.id} data-tags={d.interests.join(' ')} style={`--c:${d.color}`} aria-pressed="false">
+        <span class="flag" aria-hidden="true">{d.flag}</span>
+        <span class="dn">{d.name[lang]}</span>
+        <span class="dt">{d.tagline[lang]}</span>
+        <span class="check" aria-hidden="true">✓</span>
+      </button>
+    ))}
+  </div>
+
+  <p class="pick" data-pick>✈ {s.pick}</p>
+
+  {destinations.map((d) => (
+    <article class="pass" data-pass={d.id} style={`--c:${d.color}`} hidden>
+      <header>
+        <span class="flag" aria-hidden="true">{d.flag}</span>
+        <div>
+          <p class="route">VIETNAM → {d.name.en.toUpperCase()}</p>
+          <h4>{d.name[lang]}</h4>
+        </div>
+        <span class="stamp-mark" data-mark>{s.stamped}</span>
+      </header>
+      <dl>
+        <div class="wide"><dt>{s.needs}</dt><dd>{d.needs[lang]}</dd></div>
+        <div><dt>{s.study}</dt><dd>{d.study[lang]}</dd></div>
+        <div><dt>{s.work}</dt><dd>{d.work[lang]}</dd></div>
+        <div><dt>{s.language}</dt><dd>{d.language[lang]}</dd></div>
+        <div><dt>{s.money}</dt><dd>{d.money[lang]}</dd></div>
+        <div class="wide fun"><dt>{s.fun}</dt><dd>{d.funFact[lang]}</dd></div>
+      </dl>
+      <div class="quiz" data-answer={d.quiz.answer}>
+        <p class="qq"><strong>{s.stampQ}:</strong> {d.quiz.q[lang]}</p>
+        <div class="opts">
+          {d.quiz.options.map((o, i) => (
+            <button type="button" class="btn" data-opt={i}>{o[lang]}</button>
+          ))}
+        </div>
+        <p class="feedback" data-feedback hidden></p>
+        <p class="why" data-why hidden>{s.correct}{d.quiz.why[lang]}</p>
+      </div>
+      {d.sources.length > 0 && (
+        <p class="src">{s.sources}: {d.sources.map((x, k) => (<>{k > 0 && ' · '}<a href={x.url} target="_blank" rel="noopener">{x.label}</a></>))}</p>
+      )}
+    </article>
+  ))}
+
+  <p class="done" data-done hidden>🏆 {s.done}</p>
+  <button type="button" class="btn reset" data-reset>{s.reset}</button>
+  <span hidden data-wrong>{s.wrong}</span>
+</div>
+
+<script>
+  const KEY = 'path.world';
+  document.querySelectorAll<HTMLElement>('[data-world]').forEach((root) => {
+    const total = Number(root.dataset.total);
+    const wrongMsg = root.querySelector<HTMLElement>('[data-wrong]')!.textContent || '';
+    let stamps: string[] = [];
+    try { stamps = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch {}
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(stamps)); } catch {} };
+    const dests = [...root.querySelectorAll<HTMLButtonElement>('[data-dest]')];
+    const passes = [...root.querySelectorAll<HTMLElement>('[data-pass]')];
+
+    function paintStamps() {
+      root.querySelectorAll<HTMLElement>('[data-slot]').forEach((sl) => sl.classList.toggle('got', stamps.includes(sl.dataset.slot!)));
+      dests.forEach((d) => d.classList.toggle('visited', stamps.includes(d.dataset.dest!)));
+      passes.forEach((p) => {
+        const got = stamps.includes(p.dataset.pass!);
+        p.classList.toggle('got', got);
+        p.querySelector<HTMLElement>('[data-why]')!.hidden = !got;
+        p.querySelectorAll<HTMLButtonElement>('[data-opt]').forEach((b) => {
+          b.disabled = got;
+          b.classList.toggle('right', got && b.dataset.opt === p.querySelector<HTMLElement>('.quiz')!.dataset.answer);
+        });
+        if (got) p.querySelector<HTMLElement>('[data-feedback]')!.hidden = true;
+      });
+      root.querySelector('[data-count]')!.textContent = String(stamps.length);
+      root.querySelector<HTMLElement>('[data-done]')!.hidden = stamps.length < total;
+    }
+    function open(id: string) {
+      dests.forEach((d) => d.setAttribute('aria-pressed', String(d.dataset.dest === id)));
+      passes.forEach((p) => (p.hidden = p.dataset.pass !== id));
+      root.querySelector<HTMLElement>('[data-pick]')!.hidden = true;
+      const pass = passes.find((p) => p.dataset.pass === id)!;
+      pass.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+    }
+    dests.forEach((d) => d.addEventListener('click', () => open(d.dataset.dest!)));
+
+    passes.forEach((p) => {
+      const quiz = p.querySelector<HTMLElement>('.quiz')!;
+      const fb = p.querySelector<HTMLElement>('[data-feedback]')!;
+      p.querySelectorAll<HTMLButtonElement>('[data-opt]').forEach((b) => b.addEventListener('click', () => {
+        if (b.dataset.opt === quiz.dataset.answer) {
+          if (!stamps.includes(p.dataset.pass!)) stamps.push(p.dataset.pass!);
+          save(); paintStamps();
+          p.classList.add('just');
+          setTimeout(() => p.classList.remove('just'), 900);
+        } else {
+          b.classList.add('wrong'); b.disabled = true;
+          fb.textContent = wrongMsg; fb.hidden = false;
+        }
+      }));
+    });
+
+    root.querySelectorAll<HTMLButtonElement>('[data-interest]').forEach((c) => c.addEventListener('click', () => {
+      const tag = c.dataset.interest!;
+      root.querySelectorAll('[data-interest]').forEach((x) => x.classList.toggle('on', x === c));
+      dests.forEach((d) => d.classList.toggle('dim', !!tag && !d.dataset.tags!.split(' ').includes(tag)));
+    }));
+
+    root.querySelector('[data-reset]')!.addEventListener('click', () => {
+      stamps = []; save();
+      passes.forEach((p) => p.querySelectorAll<HTMLButtonElement>('[data-opt]').forEach((b) => b.classList.remove('wrong')));
+      paintStamps();
+    });
+    paintStamps();
+  });
+</script>
+
+<style>
+  .top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+  .top > div:first-child { flex: 1 1 280px; min-width: 0; }
+  .intro { color: var(--text-soft); margin: 0; }
+  .passport { flex: 0 0 auto; padding: 0.8rem 1rem; border-radius: 12px; background: #23395b; color: #f3e6c4; display: grid; gap: 0.5rem; justify-items: center; }
+  .p-title { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; }
+  .slots { display: grid; grid-template-columns: repeat(4, 34px); gap: 6px; }
+  .slot { width: 34px; height: 34px; border-radius: 50%; border: 1.5px dashed rgb(243 230 196 / 0.45); display: grid; place-items: center; font-size: 0.65rem; font-weight: 800; color: rgb(243 230 196 / 0.4); transition: all 0.3s ease; }
+  .slot.got { border: 2.5px solid var(--c); color: #fff; background: var(--c); transform: rotate(-12deg); }
+  .p-count { font-size: 0.8rem; }
+  .filter-label { margin: 1.2rem 0 0.4rem; font-weight: 600; font-size: 0.92rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .chip { padding: 0.4rem 0.8rem; border-radius: 999px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font: inherit; font-size: 0.88rem; cursor: pointer; min-height: 38px; }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.6rem; margin-top: 1rem; }
+  .dest { position: relative; display: grid; gap: 0.15rem; text-align: left; padding: 0.8rem; border-radius: 12px; border: 1.5px solid var(--border); border-top: 5px solid var(--c);
+    background: var(--bg); color: var(--text); font: inherit; cursor: pointer; transition: transform 0.15s ease, opacity 0.2s ease, border-color 0.15s ease; }
+  .dest:hover { transform: translateY(-2px); border-color: var(--c); }
+  .dest[aria-pressed='true'] { border-color: var(--c); box-shadow: var(--shadow); }
+  .dest.dim { opacity: 0.35; }
+  .flag { font-size: 1.6rem; line-height: 1; }
+  .dn { font-weight: 700; }
+  .dt { font-size: 0.8rem; color: var(--text-soft); line-height: 1.35; }
+  .check { position: absolute; top: 0.5rem; right: 0.6rem; width: 22px; height: 22px; border-radius: 50%; background: var(--c); color: #fff; font-size: 0.75rem; display: none; place-items: center; }
+  .dest.visited .check { display: grid; }
+  .pick { text-align: center; color: var(--text-soft); margin: 1.2rem 0 0.4rem; }
+  .pass { margin-top: 1.2rem; border-radius: 16px; border: 2px dashed var(--c); background: var(--bg); padding: 1rem 1.2rem; scroll-margin-top: 5rem; position: relative; overflow: hidden; }
+  .pass header { display: flex; align-items: center; gap: 0.8rem; border-bottom: 1px dashed var(--border); padding-bottom: 0.7rem; }
+  .pass .flag { font-size: 2.4rem; }
+  .route { margin: 0; font-size: 0.7rem; letter-spacing: 0.16em; font-weight: 700; color: var(--c); }
+  .pass h4 { margin: 0.1rem 0 0; font-family: var(--font-head); font-size: 1.4rem; }
+  .stamp-mark { margin-left: auto; padding: 0.25rem 0.7rem; border: 3px solid var(--c); color: var(--c); border-radius: 8px; font-weight: 800; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.08em; transform: rotate(-10deg); opacity: 0; transition: opacity 0.3s ease; }
+  .pass.got .stamp-mark { opacity: 1; }
+  .pass.just .stamp-mark { animation: thump 0.6s ease; }
+  @keyframes thump { 0% { transform: rotate(-10deg) scale(2.2); opacity: 0; } 60% { transform: rotate(-10deg) scale(0.9); opacity: 1; } 100% { transform: rotate(-10deg) scale(1); } }
+  dl { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; margin: 0.9rem 0; }
+  dl .wide { grid-column: 1 / -1; }
+  dt { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c); }
+  dd { margin: 0.15rem 0 0; font-size: 0.95rem; }
+  .fun dd { font-style: italic; }
+  .quiz { background: var(--bg-soft); border-radius: 12px; padding: 0.8rem 1rem; }
+  .qq { margin: 0 0 0.6rem; }
+  .opts { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .opts .btn { min-height: 40px; font-size: 0.9rem; }
+  .opts .btn.right, .opts .btn.right:disabled { background: var(--good); border-color: var(--good); color: #fff; opacity: 1; }
+  .opts .btn.wrong { text-decoration: line-through; }
+  .feedback { margin: 0.6rem 0 0; color: var(--bad); font-size: 0.92rem; }
+  .why { margin: 0.6rem 0 0; color: var(--good); font-weight: 600; font-size: 0.95rem; }
+  .src { font-size: 0.78rem; color: var(--text-soft); margin: 0.8rem 0 0; }
+  .done { margin: 1.2rem 0 0; padding: 0.9rem 1.1rem; border-radius: 12px; background: var(--accent-soft); font-weight: 600; }
+  .reset { margin-top: 1rem; font-size: 0.85rem; min-height: 36px; }
+  @media (max-width: 560px) { dl { grid-template-columns: 1fr; } .slots { grid-template-columns: repeat(7, 28px); } .slot { width: 28px; height: 28px; } }
+</style>

@@ -4,8 +4,8 @@ import type { Lang } from '../../i18n/ui';
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const s = {
-  en: { label: 'Know yourself first', title: 'My card', name: 'My name', namePh: 'What should I call you?', saved: 'Saved on this device only', print: 'Print / save as PDF' },
-  vi: { label: 'Hiểu mình trước', title: 'Tấm thẻ của em', name: 'Tên của em', namePh: 'Mọi người thường gọi em là gì?', saved: 'Chỉ lưu trên thiết bị này', print: 'In / lưu PDF' },
+  en: { label: 'Know yourself first', title: 'About me', name: 'My name', namePh: 'What should I call you?', emptyNote: 'Fill in the boxes and your card appears here.', saved: 'Saved on this device only', print: 'Print / save as PDF' },
+  vi: { label: 'Hiểu mình trước', title: 'Thẻ giới thiệu', name: 'Tên của em', namePh: 'Mọi người thường gọi em là gì?', emptyNote: 'Điền vào các ô bên cạnh, tấm thẻ sẽ hiện ở đây.', saved: 'Chỉ lưu trên thiết bị này', print: 'In / lưu PDF' },
 }[lang];
 ---
 <div class="widget about" data-about>
@@ -19,12 +19,13 @@ const s = {
     </div>
     <article class="card" aria-live="polite">
       <p class="kicker">{s.title}</p>
-      <h4 data-out="name">…</h4>
+      <h4 data-out="name" data-empty={s.namePh}></h4>
       <dl>
         {aboutPrompts.map((p) => (
-          <div><dt>{p.q[lang]}</dt><dd data-out={p.id}>—</dd></div>
+          <div data-row={p.id} hidden><dt>{p.q[lang]}</dt><dd data-out={p.id}></dd></div>
         ))}
       </dl>
+      <p class="empty" data-empty-note>{s.emptyNote}</p>
     </article>
   </div>
   <div class="row foot">
@@ -39,19 +40,37 @@ const s = {
     let st: Record<string, string> = {};
     try { st = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch {}
     const fields = [...root.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-f]')];
-    const paint = () => fields.forEach((f) => {
-      const out = root.querySelector(`[data-out="${f.dataset.f}"]`);
-      if (out) out.textContent = f.value.trim() || (f.dataset.f === 'name' ? '…' : '—');
-    });
+    const paint = () => {
+      let filled = 0;
+      fields.forEach((f) => {
+        const v = f.value.trim();
+        const out = root.querySelector<HTMLElement>(`[data-out="${f.dataset.f}"]`);
+        if (!out) return;
+        if (f.dataset.f === 'name') {
+          out.textContent = v || out.dataset.empty || '';
+          out.classList.toggle('placeholder', !v);
+        } else {
+          out.textContent = v;
+          root.querySelector<HTMLElement>(`[data-row="${f.dataset.f}"]`)!.hidden = !v;
+        }
+        if (v) filled++;
+      });
+      root.querySelector<HTMLElement>('[data-empty-note]')!.hidden = filled > 0;
+    };
     fields.forEach((f) => {
       f.value = st[f.dataset.f!] || '';
       f.addEventListener('input', () => { st[f.dataset.f!] = f.value; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch {} paint(); });
     });
     paint();
     root.querySelector('[data-print]')!.addEventListener('click', () => {
-      document.body.classList.add('print-about'); root.classList.add('printing');
+      const holder = document.createElement('div');
+      holder.className = 'about-print';
+      holder.append(root.querySelector('.card')!.cloneNode(true));
+      document.body.append(holder);
+      document.body.classList.add('print-about');
+      const done = () => { holder.remove(); document.body.classList.remove('print-about'); window.removeEventListener('afterprint', done); };
+      window.addEventListener('afterprint', done);
       window.print();
-      setTimeout(() => { document.body.classList.remove('print-about'); root.classList.remove('printing'); }, 500);
     });
   });
 </script>
@@ -70,10 +89,23 @@ const s = {
   dd { margin: 0.15rem 0 0; white-space: pre-wrap; font-size: 0.97rem; }
   .foot { justify-content: space-between; margin-top: 0.5rem; }
   .saved { font-size: 0.8rem; color: var(--text-soft); }
+  h4.placeholder { opacity: 0.55; font-size: 1.2rem; }
+  .empty { margin: 0; opacity: 0.75; font-size: 0.95rem; }
   @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } .card { position: static; } }
+</style>
+
+<style is:global>
+  .about-print { display: none; }
   @media print {
-    :global(body.print-about) :global(*) { visibility: hidden; }
-    :global(body.print-about) .printing .card, :global(body.print-about) .printing .card :global(*) { visibility: visible; }
-    :global(body.print-about) .printing .card { position: fixed; inset: 0; margin: auto; width: 16cm; height: fit-content; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    body.print-about > *:not(.about-print) { display: none !important; }
+    body.print-about .about-print { display: block; }
+    .about-print .card { position: static; width: 16cm; margin: 1.5cm auto; padding: 1.3rem 1.4rem; border-radius: 18px; color: #fdf8ef;
+      background: linear-gradient(140deg, #1f6f5c, #14473b); print-color-adjust: exact; -webkit-print-color-adjust: exact; font-family: var(--font-body); }
+    .about-print .kicker, .about-print dt { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #f2b98f; margin: 0; }
+    .about-print h4 { font-family: var(--font-head); font-size: 1.7rem; margin: 0.2rem 0 0.8rem; }
+    .about-print h4.placeholder, .about-print .empty { display: none; }
+    .about-print dl { margin: 0; display: grid; gap: 0.7rem; }
+    .about-print dd { margin: 0.15rem 0 0; white-space: pre-wrap; }
+    .about-print [hidden] { display: none !important; }
   }
 </style>

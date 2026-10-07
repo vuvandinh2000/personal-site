@@ -1,0 +1,56 @@
+---
+/** A small fun story about the name, shown on the home page. */
+import type { Lang } from '../i18n/ui';
+const { lang } = Astro.props as { lang: Lang };
+const parts = [
+  { ch: '武', vn: 'Vũ', py: 'wǔ', jp: 'Takeshi', en: 'martial — strength and grit', vi: 'võ — sức mạnh, sự bền bỉ' },
+  { ch: '文', vn: 'Văn', py: 'wén', jp: 'Bun', en: 'letters — learning and writing', vi: 'văn — chữ nghĩa, học hành' },
+  { ch: '定', vn: 'Định', py: 'dìng', jp: 'Tei', en: 'settled — calm and steady', vi: 'định — vững vàng, an định' },
+];
+---
+<section class="name-story container" aria-labelledby="name-story-title">
+  <div class="card">
+    <div class="text">
+      {lang === 'vi' ? (
+        <>
+          <h2 id="name-story-title">Chuyện cái tên</h2>
+          <p>Tên mình là <strong>Vũ Văn Định</strong>, viết bằng chữ Hán là 武文定. Tiếng Trung đọc là <em>Wǔ Wén Dìng</em>, còn đọc theo kiểu Nhật thì thành <em>Takeshi Bun Tei</em>, nghe như một samurai đi lạc.</p>
+          <p>Gộp lại thì vừa văn vừa võ, rồi đứng cho vững. Tạm thời phần "văn" có vẻ đang thắng — code cũng tính là chữ, đúng không?</p>
+        </>
+      ) : (
+        <>
+          <h2 id="name-story-title">About the name</h2>
+          <p>My name is <strong>Vũ Văn Định</strong>, written 武文定 in Chinese characters. In Mandarin that is <em>Wǔ Wén Dìng</em>; a Japanese friend would read it as <em>Takeshi Bun Tei</em>, which sounds like a samurai who got lost.</p>
+          <p>Put together: a bit of brains, a bit of brawn, and standing firm. So far the "letters" part is winning — code counts as writing, right?</p>
+        </>
+      )}
+    </div>
+    <ol class="kanji">
+      {parts.map((p) => (
+        <li>
+          <span class="ch" lang="ja">{p.ch}</span>
+          <span class="names"><strong>{p.vn}</strong> · <span class="py" lang="zh-Latn">{p.py}</span> · <span class="jp" lang="ja-Latn">{p.jp}</span></span>
+          <span class="meaning">{p[lang]}</span>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+<style>
+  .name-story { margin-top: 1rem; }
+  .card { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem 2rem; align-items: center;
+    padding: clamp(1.2rem, 3vw, 2rem); border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); }
+  h2 { margin: 0 0 0.6rem; font-size: 1.5rem; }
+  .text p { margin: 0 0 0.7rem; color: var(--text-soft); max-width: 52ch; }
+  .text p:last-child { margin-bottom: 0; }
+  .text strong { color: var(--text); }
+  .kanji { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+  .kanji li { display: grid; grid-template-columns: auto 1fr; grid-template-areas: 'ch names' 'ch meaning'; column-gap: 0.9rem; align-items: center;
+    padding: 0.6rem 0.9rem; border-radius: 12px; background: var(--bg-soft); }
+  .ch { grid-area: ch; font-family: 'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', serif; font-size: 2.2rem; line-height: 1; color: var(--accent); }
+  .names { grid-area: names; font-size: 0.95rem; }
+  .names .jp { color: var(--warm); font-weight: 600; }
+  .names .py { color: var(--text-soft); font-style: italic; }
+  .meaning { grid-area: meaning; font-size: 0.88rem; color: var(--text-soft); }
+  @media (max-width: 720px) { .card { grid-template-columns: 1fr; } }
+</style>

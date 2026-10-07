@@ -1,14 +1,18 @@
 ---
 import { useTranslations, type Lang } from '../i18n/ui';
+import SocialLinks from './SocialLinks.astro';
 const { lang } = Astro.props as { lang: Lang };
 const t = useTranslations(lang);
 ---
 <footer class="site-footer">
   <div class="container">
     <p>{t('footer.made')}</p>
+    <SocialLinks size="sm" />
   </div>
 </footer>
 <style>
+  .site-footer .container { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; }
+  .site-footer p { margin: 0; }
   .site-footer {
     margin-top: 5rem;
     padding: 2rem 0 3rem;

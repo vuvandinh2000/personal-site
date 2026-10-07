@@ -10,7 +10,7 @@ export type T = { en: string; vi: string };
 /* ------------------------------------------------------------------ */
 export const aboutPrompts: { id: string; q: T; ph: T }[] = [
   { id: 'love', q: { en: '3 things I love doing', vi: '3 điều mình thích làm' }, ph: { en: 'e.g. cooking, films, exploring new places', vi: 'VD: nấu ăn, xem phim, khám phá nơi mới' } },
-  { id: 'good', q: { en: 'Something I am good at (or people say I am good at)', vi: 'Một điều mình làm tốt (hoặc mọi người khen)' }, ph: { en: 'e.g. explaining physics to friends', vi: 'VD: giảng bài Lý cho bạn' } },
+  { id: 'good', q: { en: 'Something I am good at (or people say I am good at)', vi: 'Một điều mình làm tốt (hoặc mọi người khen)' }, ph: { en: 'e.g. listening to friends, organising events', vi: 'VD: lắng nghe bạn bè, tổ chức sự kiện' } },
   { id: 'proud', q: { en: 'A moment I was proud of myself', vi: 'Một lần mình thấy tự hào về bản thân' }, ph: { en: 'e.g. a prize at school', vi: 'VD: đạt giải ở trường' } },
   { id: 'change', q: { en: 'One thing I want to change about myself this year', vi: 'Một điều mình muốn thay đổi ở bản thân trong năm nay' }, ph: { en: 'e.g. more confident speaking in front of people', vi: 'VD: tự tin hơn khi nói trước đám đông' } },
   { id: 'worry', q: { en: 'What I worry about most right now', vi: 'Điều mình lo lắng nhất lúc này' }, ph: { en: 'e.g. choosing the right path, money', vi: 'VD: chọn sai đường, chuyện tài chính' } },
@@ -29,7 +29,7 @@ export const riasecItems: { type: Riasec; text: T }[] = [
   { type: 'R', text: { en: 'I like learning how machines or tools work.', vi: 'Mình thích tìm hiểu máy móc, dụng cụ hoạt động thế nào.' } },
   { type: 'R', text: { en: 'I like jobs where you can see a real, finished result.', vi: 'Mình thích công việc làm ra sản phẩm cụ thể, nhìn thấy được.' } },
 
-  { type: 'I', text: { en: 'I enjoy solving maths or physics problems.', vi: 'Mình thích giải bài Toán hoặc Vật lý.' } },
+  { type: 'I', text: { en: 'I enjoy solving tricky problems that need careful reasoning.', vi: 'Mình thích giải những vấn đề khó, cần suy luận kỹ.' } },
   { type: 'I', text: { en: 'I often ask "why?" and look for the answer myself.', vi: 'Mình hay hỏi "tại sao?" và tự đi tìm câu trả lời.' } },
   { type: 'I', text: { en: 'I like doing experiments or testing ideas.', vi: 'Mình thích làm thí nghiệm hoặc thử nghiệm ý tưởng.' } },
   { type: 'I', text: { en: 'I enjoy reading or watching videos about science and nature.', vi: 'Mình thích đọc hoặc xem video về khoa học, tự nhiên.' } },

@@ -1,6 +1,9 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostCard from '../../components/PostCard.astro';
+import SocialLinks from '../../components/SocialLinks.astro';
+import NameStory from '../../components/NameStory.astro';
+import { spokenLanguages } from '../../data/socials';
 import { langs, useTranslations, localePath, type Lang } from '../../i18n/ui';
 import { getPosts } from '../../lib';
 
@@ -18,6 +21,13 @@ const mentoringCount = posts.filter((p) => p.data.series === 'mentoring').length
     <div class="intro">
       <h1>{t('home.hello')}</h1>
       <p class="lead">{t('home.intro')}</p>
+      <p class="langs">
+        <span class="langs-label">{t('home.languages')}:</span>
+        {spokenLanguages.map((l) => (
+          <span class="lang-chip">{l[lang]}{l.level && <em> · {l.level[lang]}</em>}</span>
+        ))}
+      </p>
+      <div class="social"><SocialLinks /></div>
     </div>
     <svg class="art" viewBox="0 0 220 180" aria-hidden="true">
       <circle cx="110" cy="92" r="78" fill="var(--accent-soft)" />
@@ -28,6 +38,8 @@ const mentoringCount = posts.filter((p) => p.data.series === 'mentoring').length
       <circle cx="44" cy="146" r="6" fill="var(--accent)" />
     </svg>
   </section>
+
+  <NameStory lang={lang} />
 
   <section class="container">
     <h2>{t('home.series')}</h2>
@@ -62,6 +74,11 @@ const mentoringCount = posts.filter((p) => p.data.series === 'mentoring').length
     font-size: clamp(2.2rem, 5vw, 3.4rem);
     margin: 0 0 1rem;
   }
+  .langs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 1rem 0 0; font-size: 0.92rem; color: var(--text-soft); }
+  .langs-label { font-weight: 600; margin-right: 0.2rem; }
+  .lang-chip { padding: 0.2rem 0.7rem; border-radius: 999px; background: var(--accent-soft); color: var(--text); font-weight: 500; }
+  .lang-chip em { font-style: normal; color: var(--text-soft); }
+  .social { margin-top: 1.2rem; }
   .lead {
     font-size: 1.2rem;
     color: var(--text-soft);

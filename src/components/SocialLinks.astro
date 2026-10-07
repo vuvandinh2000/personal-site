@@ -1,0 +1,24 @@
+---
+import { socials } from '../data/socials';
+interface Props { size?: 'sm' | 'md' }
+const { size = 'md' } = Astro.props;
+---
+<ul class:list={['socials', size]}>
+  {socials.map((s) => (
+    <li>
+      <a href={s.url} target="_blank" rel="me noopener" aria-label={s.name} title={s.name}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d={s.icon} fill="currentColor" /></svg>
+        {size === 'md' && <span>{s.name}</span>}
+      </a>
+    </li>
+  ))}
+</ul>
+<style>
+  .socials { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; padding: 0; margin: 0; }
+  a { display: inline-flex; align-items: center; gap: 0.45rem; color: var(--text-soft); text-decoration: none; border-radius: 999px; }
+  a:hover { color: var(--accent); }
+  .md a { padding: 0.45rem 0.9rem; border: 1.5px solid var(--border); background: var(--surface); font-weight: 600; font-size: 0.9rem; }
+  .md a:hover { border-color: var(--accent); }
+  .sm a { padding: 0.3rem; }
+  svg { width: 18px; height: 18px; }
+</style>
