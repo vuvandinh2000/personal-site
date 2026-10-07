@@ -4,8 +4,8 @@ import type { Lang } from '../../i18n/ui';
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const s = {
-  en: { label: 'Let’s get to know each other', title: 'My card', name: 'My name', namePh: 'What should I call you?', saved: 'Saved on this device only', print: 'Print / save as PDF' },
-  vi: { label: 'Làm quen nhé', title: 'Tấm thẻ của em', name: 'Tên của em', namePh: 'Anh/chị nên gọi em là gì?', saved: 'Chỉ lưu trên thiết bị này', print: 'In / lưu PDF' },
+  en: { label: 'Know yourself first', title: 'My card', name: 'My name', namePh: 'What should I call you?', saved: 'Saved on this device only', print: 'Print / save as PDF' },
+  vi: { label: 'Hiểu mình trước', title: 'Tấm thẻ của em', name: 'Tên của em', namePh: 'Mọi người thường gọi em là gì?', saved: 'Chỉ lưu trên thiết bị này', print: 'In / lưu PDF' },
 }[lang];
 ---
 <div class="widget about" data-about>

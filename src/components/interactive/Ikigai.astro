@@ -1,0 +1,146 @@
+---
+/** Interactive ikigai map (4 circles) + a small worksheet saved on the device. */
+import type { Lang } from '../../i18n/ui';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+
+const t = {
+  en: {
+    label: 'Ikigai map', hint: 'Tap any circle or overlap to read about it.',
+    love: 'What you love', good: 'What you are good at', need: 'What the world needs', paid: 'What you can be paid for',
+    passion: 'Passion', mission: 'Mission', vocation: 'Vocation', profession: 'Profession', center: 'Ikigai',
+    worksheet: 'Fill in your four circles', wsHint: 'Write 3–5 things in each box. Then look for anything that shows up in more than one box.',
+    overlap: 'What appears in more than one box?', overlapPh: 'e.g. explaining things to others: I love it, I am good at it, and schools need it',
+    saved: 'Saved on this device only',
+    ph: { love: 'e.g. cooking, films, exploring new places', good: 'e.g. physics, explaining lessons', need: 'e.g. good teachers in rural areas', paid: 'e.g. teaching, interpreting, cooking' },
+  },
+  vi: {
+    label: 'Bản đồ Ikigai', hint: 'Chạm vào một vòng tròn hoặc phần giao nhau để đọc giải thích.',
+    love: 'Điều em yêu thích', good: 'Điều em giỏi', need: 'Điều thế giới cần', paid: 'Điều được trả tiền',
+    passion: 'Đam mê', mission: 'Sứ mệnh', vocation: 'Thiên hướng', profession: 'Chuyên môn', center: 'Ikigai',
+    worksheet: 'Điền bốn vòng tròn của em', wsHint: 'Viết 3–5 điều vào mỗi ô. Sau đó tìm những điều xuất hiện ở nhiều hơn một ô.',
+    overlap: 'Điều gì xuất hiện ở nhiều hơn một ô?', overlapPh: 'VD: giảng giải cho người khác: em thích, em làm tốt, và trường học cần',
+    saved: 'Chỉ lưu trên thiết bị này',
+    ph: { love: 'VD: nấu ăn, xem phim, khám phá nơi mới', good: 'VD: môn Lý, giảng bài cho bạn', need: 'VD: giáo viên giỏi ở vùng xa', paid: 'VD: dạy học, phiên dịch, đầu bếp' },
+  },
+}[lang];
+
+const info: Record<string, { en: string; vi: string }> = {
+  love: { en: 'Things that make you lose track of time. You would do them even if nobody paid you.', vi: 'Những việc làm em quên cả thời gian. Không ai trả tiền em vẫn muốn làm.' },
+  good: { en: 'Skills and strengths — what teachers, friends or results say you do well. These grow with practice.', vi: 'Kỹ năng và thế mạnh — điều thầy cô, bạn bè hay kết quả học tập cho thấy em làm tốt. Thứ này lớn lên nhờ luyện tập.' },
+  need: { en: 'Problems around you that someone should solve: in your family, your village, your country.', vi: 'Những vấn đề xung quanh cần ai đó giải quyết: trong gia đình, quê hương, đất nước.' },
+  paid: { en: 'Work that people or companies pay for — today, and likely in 5–10 years.', vi: 'Công việc mà người khác hay doanh nghiệp sẵn sàng trả tiền — hôm nay, và có lẽ cả 5–10 năm nữa.' },
+  passion: { en: 'Love + good at. Delight and fullness — but if nobody needs it or pays for it, it may stay a hobby.', vi: 'Yêu thích + giỏi. Vui và trọn vẹn — nhưng nếu không ai cần, không ai trả tiền, nó có thể chỉ là sở thích.' },
+  mission: { en: 'Love + the world needs it. Meaningful — but without skill or income it can feel shaky.', vi: 'Yêu thích + thế giới cần. Rất ý nghĩa — nhưng thiếu kỹ năng hoặc thu nhập thì dễ chông chênh.' },
+  vocation: { en: 'Needed + paid. Useful and secure — but if you do not love it or are not good at it, it can feel like a duty.', vi: 'Thế giới cần + được trả tiền. Có ích và ổn định — nhưng nếu không thích, không giỏi thì dễ thành nghĩa vụ.' },
+  profession: { en: 'Good at + paid. Comfortable — but without love or meaning, people often feel empty.', vi: 'Giỏi + được trả tiền. Thoải mái — nhưng thiếu yêu thích và ý nghĩa thì dễ thấy trống rỗng.' },
+  center: { en: 'All four at once. Few people find it at 18 — most build it step by step, moving one circle closer at a time.', vi: 'Cả bốn cùng lúc. Ít ai tìm thấy ở tuổi 18 — phần lớn mọi người xây dần, mỗi lần kéo một vòng tròn lại gần hơn.' },
+};
+const regions = [
+  { id: 'love', x: 320, y: 62, size: 17, bold: true },
+  { id: 'good', x: 135, y: 255, size: 17, bold: true },
+  { id: 'need', x: 505, y: 255, size: 17, bold: true },
+  { id: 'paid', x: 320, y: 452, size: 17, bold: true },
+  { id: 'passion', x: 238, y: 172, size: 15 },
+  { id: 'mission', x: 402, y: 172, size: 15 },
+  { id: 'profession', x: 238, y: 345, size: 15 },
+  { id: 'vocation', x: 402, y: 345, size: 15 },
+  { id: 'center', x: 320, y: 262, size: 18, bold: true },
+];
+const detail = Object.fromEntries(Object.entries(info).map(([k, v]) => [k, v[lang]]));
+const names = { love: t.love, good: t.good, need: t.need, paid: t.paid, passion: t.passion, mission: t.mission, vocation: t.vocation, profession: t.profession, center: t.center } as Record<string, string>;
+const boxes = ['love', 'good', 'need', 'paid'] as const;
+---
+<div class="widget ikigai" data-ikigai data-detail={JSON.stringify(detail)} data-names={JSON.stringify(names)}>
+  <span class="widget-label">{t.label}</span>
+  <p class="hint">{t.hint}</p>
+  <svg viewBox="0 0 640 490" role="group" aria-label={t.label}>
+    <circle cx="320" cy="170" r="130" class="c love" />
+    <circle cx="215" cy="262" r="130" class="c good" />
+    <circle cx="425" cy="262" r="130" class="c need" />
+    <circle cx="320" cy="355" r="130" class="c paid" />
+    <circle cx="320" cy="262" r="30" class="core" />
+    {regions.map((r) => (
+      <g class="hit" tabindex="0" role="button" data-region={r.id} aria-label={names[r.id]}>
+        <text x={r.x} y={r.y} text-anchor="middle" dominant-baseline="middle" font-size={r.size} font-weight={r.bold ? 700 : 600}>{names[r.id]}</text>
+      </g>
+    ))}
+  </svg>
+  <div class="panel" aria-live="polite">
+    <strong data-title>{t.center}</strong>
+    <p data-text>{detail.center}</p>
+  </div>
+
+  <h4>{t.worksheet}</h4>
+  <p class="hint">{t.wsHint}</p>
+  <div class="boxes">
+    {boxes.map((b) => (
+      <label class:list={['box', b]}>
+        <span>{names[b]}</span>
+        <textarea id={`ikigai-${b}`} rows="4" data-box={b} placeholder={t.ph[b]}></textarea>
+      </label>
+    ))}
+  </div>
+  <label class="overlap">
+    <span>{t.overlap}</span>
+    <textarea id="ikigai-overlap" rows="2" data-box="overlap" placeholder={t.overlapPh}></textarea>
+  </label>
+  <p class="saved">✓ {t.saved}</p>
+</div>
+
+<script>
+  const KEY = 'path.ikigai';
+  document.querySelectorAll<HTMLElement>('[data-ikigai]').forEach((root) => {
+    const detail = JSON.parse(root.dataset.detail || '{}') as Record<string, string>;
+    const names = JSON.parse(root.dataset.names || '{}') as Record<string, string>;
+    const title = root.querySelector('[data-title]')!, text = root.querySelector('[data-text]')!;
+    const hits = [...root.querySelectorAll<SVGGElement>('[data-region]')];
+    const select = (id: string) => {
+      title.textContent = names[id]; text.textContent = detail[id];
+      hits.forEach((h) => h.classList.toggle('on', h.dataset.region === id));
+      root.dataset.active = id;
+    };
+    hits.forEach((h) => {
+      h.addEventListener('click', () => select(h.dataset.region!));
+      h.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(h.dataset.region!); } });
+    });
+    select('center');
+
+    let st: Record<string, string> = {};
+    try { st = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch {}
+    root.querySelectorAll<HTMLTextAreaElement>('[data-box]').forEach((ta) => {
+      ta.value = st[ta.dataset.box!] || '';
+      ta.addEventListener('input', () => { st[ta.dataset.box!] = ta.value; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch {} });
+    });
+  });
+</script>
+
+<style>
+  .ikigai { --c-love: var(--warm); --c-good: var(--accent); --c-need: #3d7fc9; --c-paid: #c9a23d; }
+  .hint { color: var(--text-soft); font-size: 0.92rem; margin: 0 0 0.6rem; }
+  svg { width: 100%; max-width: 560px; height: auto; display: block; margin: 0 auto; font-family: var(--font-body); }
+  .c { fill-opacity: 0.16; stroke-width: 2.5; }
+  .c.love { fill: var(--c-love); stroke: var(--c-love); }
+  .c.good { fill: var(--c-good); stroke: var(--c-good); }
+  .c.need { fill: var(--c-need); stroke: var(--c-need); }
+  .c.paid { fill: var(--c-paid); stroke: var(--c-paid); }
+  .core { fill: var(--surface); stroke: var(--text); stroke-width: 2.5; }
+  .hit { cursor: pointer; outline: none; }
+  .hit text { fill: var(--text); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+  .hit:hover text, .hit:focus-visible text { fill: var(--accent); }
+  .hit.on text { fill: var(--accent); text-decoration: underline; }
+  .panel { margin: 0.6rem auto 1.4rem; max-width: 560px; padding: 0.9rem 1.1rem; border-radius: 12px; background: var(--bg-soft); min-height: 5.5em; }
+  .panel strong { font-family: var(--font-head); font-size: 1.1rem; }
+  .panel p { margin: 0.3rem 0 0; }
+  h4 { font-family: var(--font-head); font-size: 1.15rem; margin: 0.5rem 0 0.2rem; }
+  .boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+  .box, .overlap { display: grid; gap: 0.3rem; font-weight: 700; font-size: 0.9rem; }
+  .box { padding: 0.7rem; border-radius: 12px; border-top: 5px solid; background: var(--bg); }
+  .box.love { border-color: var(--c-love); } .box.good { border-color: var(--c-good); }
+  .box.need { border-color: var(--c-need); } .box.paid { border-color: var(--c-paid); }
+  .overlap { margin-top: 0.8rem; }
+  textarea { font: inherit; font-weight: 400; padding: 0.55rem 0.7rem; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); resize: vertical; }
+  textarea:focus { border-color: var(--accent); outline: none; }
+  .saved { font-size: 0.8rem; color: var(--text-soft); margin: 0.5rem 0 0; }
+  @media (max-width: 560px) { .boxes { grid-template-columns: 1fr; } }
+</style>

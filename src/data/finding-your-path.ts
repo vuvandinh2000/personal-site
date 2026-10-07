@@ -125,7 +125,7 @@ export const priorities: { id: Priority; label: T; hint: T }[] = [
   { id: 'stable', label: { en: 'Long-term stability', vi: 'Ổn định lâu dài' }, hint: { en: 'A secure job for many years', vi: 'Công việc vững chắc nhiều năm' } },
 ];
 
-export type PathId = 'uni' | 'voc' | 'mil' | 'study' | 'work' | 'combo';
+export type PathId = 'uni' | 'voc' | 'study' | 'work' | 'combo';
 
 export const paths: {
   id: PathId;
@@ -146,22 +146,27 @@ export const paths: {
     id: 'uni',
     icon: '🎓',
     name: { en: 'University', vi: 'Đại học' },
-    what: { en: 'A 4-year bachelor degree. Many majors, from teacher education to IT, languages and business.', vi: 'Học 4 năm lấy bằng cử nhân. Rất nhiều ngành: sư phạm, CNTT, ngôn ngữ, kinh tế…' },
+    what: { en: 'A 4-year bachelor degree. Many majors, from teacher education to IT, languages and business — including military and police academies, which are universities too.', vi: 'Học 4 năm lấy bằng cử nhân. Rất nhiều ngành: sư phạm, CNTT, ngôn ngữ, kinh tế… — kể cả các học viện, trường quân đội và công an, vốn cũng là trường đại học.' },
     time: { en: '4 years (5–6 for medicine, engineering)', vi: '4 năm (y, kỹ thuật 5–6 năm)' },
     cost: { en: 'Tuition + living costs. Teacher education students can get tuition and 3.63 million VND/month living support from the state.', vi: 'Học phí + sinh hoạt phí. Sinh viên sư phạm có thể được Nhà nước hỗ trợ học phí và 3,63 triệu đồng/tháng sinh hoạt phí.' },
     pros: [
       { en: 'Widest choice of careers later, in Vietnam or abroad', vi: 'Nhiều lựa chọn nghề nghiệp nhất về sau, trong nước hay nước ngoài' },
       { en: 'Needed for jobs like teacher, doctor, engineer', vi: 'Bắt buộc với nghề như giáo viên, bác sĩ, kỹ sư' },
       { en: 'Time to grow up, join clubs, build confidence', vi: 'Có thời gian trưởng thành, tham gia CLB, rèn sự tự tin' },
+      { en: 'Military and police academies: free tuition, food and housing, and a guaranteed job', vi: 'Trường quân đội, công an: miễn học phí, ăn ở, ra trường được phân công công tác' },
     ],
     cons: [
       { en: 'Longest before earning a full salary', vi: 'Lâu nhất mới có lương đầy đủ' },
       { en: 'Living costs in the city; often needs part-time work', vi: 'Tốn chi phí sinh hoạt ở thành phố; thường phải làm thêm' },
+      { en: 'Military academies take very few women (only 4 did in 2026), with high scores, health checks and spring preliminary selection', vi: 'Trường quân đội tuyển rất ít nữ (năm 2026 chỉ 4 học viện), điểm cao, khám sức khoẻ và sơ tuyển từ mùa xuân' },
     ],
     fits: { en: 'You like studying, want a profession that needs a degree, or want to keep many doors open.', vi: 'Em thích học, muốn làm nghề cần bằng đại học, hoặc muốn giữ nhiều cánh cửa mở.' },
     firstStep: { en: 'List 3 majors you are curious about and check each school’s 2027 admission plan (đề án tuyển sinh).', vi: 'Liệt kê 3 ngành em tò mò và xem đề án tuyển sinh 2027 của từng trường.' },
     score: { earn: 0, cost: 1, degree: 3, home: 2, abroad: 1, stable: 2 },
-    sources: [{ label: 'Nghị định 116/2020 – hỗ trợ SV sư phạm (hoatieu.vn)', url: 'https://hoatieu.vn/phap-luat/hoc-phi-sinh-vien-su-pham-215216' }],
+    sources: [
+      { label: 'Nghị định 116/2020 – hỗ trợ SV sư phạm (hoatieu.vn)', url: 'https://hoatieu.vn/phap-luat/hoc-phi-sinh-vien-su-pham-215216' },
+      { label: 'Bốn học viện quân đội tuyển nữ 2026 (Báo Lào Cai)', url: 'https://baolaocai.vn/bon-hoc-vien-cua-quan-doi-tuyen-thi-sinh-nu-nam-2026-post896470.html' },
+    ],
   },
   {
     id: 'voc',
@@ -182,28 +187,6 @@ export const paths: {
     fits: { en: 'You learn best by doing, and want to earn and help your family sooner.', vi: 'Em học tốt nhất khi được làm, và muốn sớm có thu nhập phụ giúp gia đình.' },
     firstStep: { en: 'Visit one college near you, ask for the tuition, practice hours and how many graduates get jobs.', vi: 'Đến thăm một trường cao đẳng gần nhà, hỏi học phí, giờ thực hành và tỉ lệ sinh viên có việc làm.' },
     score: { earn: 2, cost: 2, degree: 1, home: 2, abroad: 1, stable: 2 },
-  },
-  {
-    id: 'mil',
-    icon: '🎖️',
-    name: { en: 'Military & police academies', vi: 'Quân đội – Công an' },
-    what: { en: 'Officer training at military or police academies. Free study, strict discipline, a guaranteed job after graduation.', vi: 'Đào tạo sĩ quan ở học viện, trường quân đội hoặc công an. Không mất học phí, kỷ luật cao, ra trường được phân công công tác.' },
-    time: { en: '4–5 years', vi: '4–5 năm' },
-    cost: { en: 'Free tuition, food and accommodation; students get an allowance.', vi: 'Miễn học phí, ăn ở; học viên có phụ cấp.' },
-    pros: [
-      { en: 'Very low cost for the family', vi: 'Gần như không tốn chi phí cho gia đình' },
-      { en: 'Stable career with clear promotion', vi: 'Nghề nghiệp ổn định, lộ trình rõ ràng' },
-      { en: 'Builds discipline and resilience', vi: 'Rèn kỷ luật và bản lĩnh' },
-    ],
-    cons: [
-      { en: 'Very few places for women: in 2026 only 4 military academies took female students', vi: 'Rất ít chỉ tiêu cho nữ: năm 2026 chỉ 4 học viện quân đội tuyển nữ' },
-      { en: 'High scores and strict health checks; preliminary selection in spring', vi: 'Điểm chuẩn cao, khám sức khoẻ nghiêm; sơ tuyển từ mùa xuân' },
-      { en: 'Less personal freedom; you may be posted far from home', vi: 'Ít tự do cá nhân; có thể công tác xa nhà' },
-    ],
-    fits: { en: 'You love discipline and service, are strong in the admission subjects, and are healthy.', vi: 'Em thích kỷ luật và phụng sự, học tốt các môn xét tuyển, sức khoẻ tốt.' },
-    firstStep: { en: 'Ask your local military office and your homeroom teacher about the 2027 preliminary selection for female candidates.', vi: 'Hỏi cơ quan quân sự địa phương và giáo viên chủ nhiệm về lịch sơ tuyển 2027 cho thí sinh nữ.' },
-    score: { earn: 1, cost: 3, degree: 3, home: 0, abroad: 0, stable: 3 },
-    sources: [{ label: 'Bốn học viện quân đội tuyển nữ 2026 (Báo Lào Cai)', url: 'https://baolaocai.vn/bon-hoc-vien-cua-quan-doi-tuyen-thi-sinh-nu-nam-2026-post896470.html' }],
   },
   {
     id: 'study',
@@ -313,7 +296,7 @@ export const nextSteps: { id: string; text: T }[] = [
 
 export const timeline: { when: T; what: T }[] = [
   { when: { en: 'Oct – Dec 2026', vi: 'Tháng 10 – 12/2026' }, what: { en: 'Explore: Holland test, research majors and paths, talk to people. Keep grades strong — transcripts (học bạ) count.', vi: 'Khám phá: làm Holland, tìm hiểu ngành và con đường, hỏi người trong nghề. Giữ điểm học bạ tốt — học bạ được dùng để xét tuyển.' } },
-  { when: { en: 'Jan – Apr 2027', vi: 'Tháng 1 – 4/2027' }, what: { en: 'Narrow to 2–3 options. Aptitude tests (ĐGNL) and military/police preliminary selection usually happen in spring.', vi: 'Thu hẹp còn 2–3 lựa chọn. Các kỳ thi đánh giá năng lực và sơ tuyển quân đội, công an thường diễn ra vào mùa xuân.' } },
+  { when: { en: 'Jan – Apr 2027', vi: 'Tháng 1 – 4/2027' }, what: { en: 'Narrow to 2–3 options. Aptitude tests (ĐGNL) and preliminary selection for military/police academies usually happen in spring.', vi: 'Thu hẹp còn 2–3 lựa chọn. Các kỳ thi đánh giá năng lực và sơ tuyển vào trường quân đội, công an thường diễn ra vào mùa xuân.' } },
   { when: { en: '11–12 June 2027 (expected)', vi: '11–12/6/2027 (dự kiến)' }, what: { en: 'National high-school graduation exam.', vi: 'Kỳ thi tốt nghiệp THPT.' } },
   { when: { en: 'Jul – Sep 2027', vi: 'Tháng 7 – 9/2027' }, what: { en: 'Register university/college choices, or start language school / job preparation.', vi: 'Đăng ký nguyện vọng đại học, cao đẳng, hoặc bắt đầu học tiếng / chuẩn bị đi làm.' } },
 ];
