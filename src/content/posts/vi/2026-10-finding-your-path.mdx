@@ -18,6 +18,8 @@ import Callout from '../../../components/Callout.astro';
 import Illustration from '../../../components/Illustration.astro';
 import Ikigai from '../../../components/interactive/Ikigai.astro';
 import WorldExplorer from '../../../components/interactive/WorldExplorer.astro';
+import JobSim from '../../../components/interactive/JobSim.astro';
+import CampusTour from '../../../components/interactive/CampusTour.astro';
 
 <Illustration name="crossroads" />
 
@@ -63,7 +65,36 @@ Mở từng con đường để xem mất bao lâu, tốn bao nhiêu, điểm m�
 
 <PathCards lang="vi" />
 
-## 4. Hai hướng đáng tìm hiểu kỹ hơn
+## 4. Thử làm nghề, thử đi học
+
+Nhớ câu ở trên chứ: **chọn nghề trước, chọn trường sau**. Nhưng chọn nghề thì khó, khi em chưa từng làm một ngày nào. Hai trò chơi dưới đây cho em “làm thử” và “học thử” — đọc xem công việc thật ra thế nào, lương bao nhiêu, rồi ghé vài giảng đường để xem cần bao nhiêu điểm, tốn bao nhiêu tiền.
+
+### Một ngày làm nghề
+
+Mỗi nghề có một mức lương để em đoán, một ngày làm việc bình thường, và một tình huống thật để em xử lý. Các con số là khoảng ước lượng năm 2025–2026; lương khu vực Nhà nước tính theo lương cơ sở 2,53 triệu đồng từ 1/7/2026.
+
+<JobSim lang="vi" />
+
+<Callout type="mentor" title="Đừng chọn nghề chỉ vì con số">
+  Lương khởi điểm cao chưa chắc là nghề “tốt” cho em. Bác sĩ khởi đầu thấp nhưng tăng dần; lập trình viên tăng nhanh nhưng phải học liên tục; công an, quân đội ổn định nhưng kỷ luật nghiêm. Hãy nhìn cả ba thứ: **em có thích không, em có làm tốt được không, và thu nhập có đủ sống không** — giống Ikigai ở trên. Cách tốt nhất vẫn là hỏi chuyện một người đang làm nghề đó.
+</Callout>
+
+### Dạo quanh giảng đường
+
+Mình chọn vài trường lớn ở Hà Nội làm ví dụ. TP.HCM, Đà Nẵng, Huế hay quê em cũng có những trường mạnh về từng ngành — cách đọc thông tin thì giống nhau. Kéo thanh điểm để xem mức điểm em nhắm tới đang đứng ở đâu.
+
+<CampusTour lang="vi" />
+
+<Callout type="tip" title="Luật chơi tuyển sinh mới (từ năm 2026)">
+  - Xét **học bạ** thì điểm thi tốt nghiệp ba môn trong tổ hợp phải đạt **từ 15/30** trở lên; không còn xét học bạ “chay”.
+  - Được đăng ký tới **15 nguyện vọng**, xếp theo thứ tự ưu tiên; ngành sư phạm chỉ xét nguyện vọng 1–5.
+  - **Điểm cộng** (giải thưởng, chứng chỉ ngoại ngữ) tối đa **3 điểm**.
+  - Mỗi ngành dùng tối đa 5 phương thức xét tuyển. Một bài thi đánh giá năng lực (HSA, TSA…) có thể dùng cho nhiều trường.
+
+  Quy chế có thể điều chỉnh cho năm 2027 — theo dõi [thông báo của Bộ GD&ĐT](https://nhandan.vn/ocop/bo-giao-duc-va-dao-tao-chot-quy-dinh-bo-xet-rieng-hoc-ba-cho-thi-sinh-dang-ky-toi-da-15-nguyen-vong-post943412.html) và đề án tuyển sinh của từng trường.
+</Callout>
+
+## 5. Hai hướng đáng tìm hiểu kỹ hơn
 
 Có hai hướng mà nhiều bạn trẻ hay hỏi: **trở thành giáo viên** và **học tiếng Hàn**. Đây cũng là ví dụ hay cho thấy một sở thích có thể dẫn tới nhiều con đường.
 
@@ -81,7 +112,7 @@ Tiếng Hàn mở ra nhiều cánh cửa, và chúng không loại trừ nhau:
 
 Dù chọn hướng nào, **bắt đầu học tiếng Hàn ngay bây giờ không tốn gì mà có ích cho mọi lựa chọn.**
 
-## 5. Khám phá thế giới
+## 6. Khám phá thế giới
 
 Nhiều nước giàu đang già đi nhanh và thiếu người làm: Đức thiếu điều dưỡng, Nhật cần thợ cơ khí và người chăm sóc người già, Hàn Quốc cần công nhân nhà máy và thợ hàn đóng tàu. Với người trẻ biết ngoại ngữ và có một tay nghề, đó là cơ hội — để đi học, đi làm, hoặc làm cho công ty nước ngoài ngay tại Việt Nam.
 
@@ -94,16 +125,16 @@ Nhiều nước giàu đang già đi nhanh và thiếu người làm: Đức thi
 <CareerLists lang="vi" kind="scams" />
 
 <Callout type="tip" title="Cách kiểm tra một công ty">
-  Mọi doanh nghiệp xuất khẩu lao động được cấp phép đều có tên trên trang của Cục Quản lý lao động ngoài nước: [dolab.gov.vn](http://dolab.gov.vn/New/Default.aspx) → *Doanh nghiệp XKLĐ* → *Danh sách*. Gõ đúng tên đầy đủ của công ty. Nếu không có tên, hãy tránh xa. Chương trình EPS đi Hàn Quốc do Nhà nước hai bên tổ chức và được thông báo qua cơ quan lao động địa phương, không qua môi giới.
+  Mọi doanh nghiệp xuất khẩu lao động được cấp phép đều có tên trên trang của Cục Quản lý lao động ngoài nước (nay thuộc Bộ Nội vụ): [dolab.moha.gov.vn](https://dolab.moha.gov.vn), mục danh sách doanh nghiệp được cấp phép. Gõ đúng tên đầy đủ của công ty. Nếu không có tên, hãy tránh xa. Chương trình EPS đi Hàn Quốc do Nhà nước hai bên tổ chức và được thông báo qua cơ quan lao động địa phương, không qua môi giới.
 </Callout>
 
-## 6. Lịch trình năm lớp 12 của em
+## 7. Lịch trình năm lớp 12 của em
 
 <CareerLists lang="vi" kind="timeline" />
 
 Em chưa cần câu trả lời cuối cùng hôm nay. Nhưng đến mùa xuân, em nên thu hẹp còn **2–3 lựa chọn**, vì một số con đường (thi đánh giá năng lực, sơ tuyển trường quân đội, công an) bắt đầu khá sớm.
 
-## 7. Việc nên làm trong tháng này
+## 8. Việc nên làm trong tháng này
 
 Chọn vài việc dưới đây để làm trong tháng này. Nếu em có mentor, hãy kể cho họ nghe em đã tìm thấy gì — nhất là điều làm em bất ngờ.
 

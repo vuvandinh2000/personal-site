@@ -231,7 +231,7 @@ export const paths: {
       { en: 'Scams are common: never pay unlicensed brokers', vi: 'Lừa đảo nhiều: tuyệt đối không nộp tiền cho môi giới không phép' },
     ],
     fits: { en: 'You are 18+, healthy, have a clear money goal and a plan for the 3–5 years after.', vi: 'Em đủ 18 tuổi, khoẻ mạnh, có mục tiêu tài chính rõ ràng và kế hoạch cho 3–5 năm sau đó.' },
-    firstStep: { en: 'Learn how to check a licensed company on dolab.gov.vn — and learn Korean or Japanese first; it helps in every path.', vi: 'Biết cách tra công ty được cấp phép trên dolab.gov.vn — và học tiếng Hàn hoặc Nhật trước; điều này có ích cho mọi con đường.' },
+    firstStep: { en: 'Learn how to check a licensed company on dolab.moha.gov.vn — and learn Korean or Japanese first; it helps in every path.', vi: 'Biết cách tra công ty được cấp phép trên dolab.moha.gov.vn — và học tiếng Hàn hoặc Nhật trước; điều này có ích cho mọi con đường.' },
     score: { earn: 3, cost: 1, degree: 0, home: 0, abroad: 3, stable: 1 },
     sources: [
       { label: 'Tuyển chọn 4.200 lao động đi Hàn 2026 (VnEconomy)', url: 'https://vneconomy.vn/tuyen-chon-4200-lao-dong-sang-lam-viec-tai-han-quoc-trong-nam-2026.htm' },
@@ -280,7 +280,7 @@ export const schools: { name: string; where: T; majors: T; url: string }[] = [
 export const scamFlags: T[] = [
   { en: 'They ask for money before you have a contract, or only take cash.', vi: 'Đòi tiền trước khi có hợp đồng, hoặc chỉ nhận tiền mặt.' },
   { en: 'They promise "guaranteed" visas or very high salaries with no language test.', vi: 'Hứa "bao đậu visa" hoặc lương rất cao mà không cần thi tiếng.' },
-  { en: 'The company is not on the licensed list at dolab.gov.vn.', vi: 'Công ty không có tên trong danh sách được cấp phép trên dolab.gov.vn.' },
+  { en: 'The company is not on the licensed list at dolab.moha.gov.vn.', vi: 'Công ty không có tên trong danh sách được cấp phép trên dolab.moha.gov.vn.' },
   { en: 'They recruit only through Facebook or Zalo, with no office you can visit.', vi: 'Chỉ tuyển qua Facebook, Zalo, không có văn phòng để đến tận nơi.' },
   { en: 'They rush you: "only 2 places left, pay today".', vi: 'Hối thúc: "chỉ còn 2 suất, nộp tiền ngay hôm nay".' },
 ];

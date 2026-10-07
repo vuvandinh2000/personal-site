@@ -1,0 +1,343 @@
+---
+/**
+ * "A day on the job" mini-game: pick a career, guess its starting salary,
+ * read what the job is really like, then handle one real situation to earn a badge.
+ * Progress is saved on the device.
+ */
+import { careers, SALARY_MAX } from '../../data/careers';
+import type { Lang } from '../../i18n/ui';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = {
+  en: {
+    label: 'Mini-game', title: 'A day on the job', intro: 'Pick a job. Guess what it pays at the start, read what the work is really like, then handle one real situation to earn its badge.',
+    badges: 'Badges', points: 'Salary-guess points',
+    pick: 'Pick a job above to start your shift.',
+    years: 'years of training', public: 'Public sector', private: 'Private sector', both: 'Public & private',
+    guessQ: 'Guess: how much does a new graduate earn per month?', guessUnit: 'million VND / month', lock: 'Lock in my guess',
+    youGuessed: 'You guessed', exact: 'Spot on! +3 points', close: 'Close! +1 point', far: 'Not quite — no points this time, but now you know.',
+    startLbl: 'Starting out', midLbl: 'After 5–10 years', guessLbl: 'Your guess', unit: 'M',
+    training: 'How to get there', bonus: 'Bonuses & extras', day: 'A normal day', outlook: 'Opportunities', hard: 'The hard parts',
+    hiddenMoney: 'Lock in your guess to reveal the real numbers.',
+    scenario: 'Situation', earned: 'Badge earned! ', wrong: 'Hmm — think about what would happen next. Try another option.',
+    sources: 'Sources', compareTitle: 'Compare the jobs', compareLocked: 'Earn 3 badges to unlock the comparison chart.',
+    compareNote: 'Bars show million VND per month. Dark = starting out, light = after 5–10 years. These are rough ranges; real pay depends on the city, employer and you.',
+    done: 'You tried every job! Which one surprised you most? Which one would you like to shadow for a real day?',
+    reset: 'Start over',
+  },
+  vi: {
+    label: 'Trò chơi', title: 'Một ngày làm nghề', intro: 'Chọn một nghề. Đoán xem mới ra trường được bao nhiêu tiền, đọc xem công việc thật ra thế nào, rồi xử lý một tình huống thật để nhận huy hiệu.',
+    badges: 'Huy hiệu', points: 'Điểm đoán lương',
+    pick: 'Chọn một nghề ở trên để bắt đầu ca làm việc.',
+    years: 'năm đào tạo', public: 'Nhà nước', private: 'Tư nhân', both: 'Công lẫn tư',
+    guessQ: 'Đoán thử: mới ra trường, mỗi tháng được bao nhiêu?', guessUnit: 'triệu đồng / tháng', lock: 'Chốt đáp án',
+    youGuessed: 'Em đoán', exact: 'Chuẩn luôn! +3 điểm', close: 'Gần đúng! +1 điểm', far: 'Chưa trúng — lần này không có điểm, nhưng giờ em đã biết.',
+    startLbl: 'Mới ra trường', midLbl: 'Sau 5–10 năm', guessLbl: 'Em đoán', unit: 'tr',
+    training: 'Con đường vào nghề', bonus: 'Thưởng và phụ cấp', day: 'Một ngày bình thường', outlook: 'Cơ hội', hard: 'Cái khó',
+    hiddenMoney: 'Chốt đáp án để xem con số thật.',
+    scenario: 'Tình huống', earned: 'Nhận huy hiệu! ', wrong: 'Hmm — thử nghĩ xem chuyện gì sẽ xảy ra tiếp theo. Chọn lại nhé.',
+    sources: 'Nguồn', compareTitle: 'So sánh các nghề', compareLocked: 'Nhận đủ 3 huy hiệu để mở khóa bảng so sánh.',
+    compareNote: 'Đơn vị: triệu đồng/tháng. Màu đậm = mới ra trường, màu nhạt = sau 5–10 năm. Đây là khoảng ước lượng; thu nhập thật còn tùy nơi làm, đơn vị và chính em.',
+    done: 'Em đã thử hết các nghề! Nghề nào làm em bất ngờ nhất? Nghề nào em muốn đi theo một người làm thật trong một ngày?',
+    reset: 'Chơi lại',
+  },
+}[lang];
+const pct = (v: number) => `${Math.min(100, (v / SALARY_MAX) * 100).toFixed(1)}%`;
+const fmt = (v: number) => (lang === 'vi' ? String(v).replace('.', ',') : String(v));
+const byStart = [...careers].sort((a, b) => (a.start[0] + a.start[1]) - (b.start[0] + b.start[1]));
+const total = careers.length;
+---
+<div class="widget jobsim" data-jobsim data-total={total} data-max={SALARY_MAX}>
+  <div class="top">
+    <div>
+      <span class="widget-label">{s.label}</span>
+      <h3>{s.title}</h3>
+      <p class="intro">{s.intro}</p>
+    </div>
+    <div class="score" aria-live="polite">
+      <span class="sc-title">{s.badges}</span>
+      <div class="badges">
+        {careers.map((c) => (
+          <span class="badge" data-badge={c.id} style={`--c:${c.color}`} title={c.name[lang]}>{c.icon}</span>
+        ))}
+      </div>
+      <span class="sc-line"><b data-nbadge>0</b>/{total} · {s.points}: <b data-points>0</b></span>
+    </div>
+  </div>
+
+  <div class="jobs">
+    {careers.map((c) => (
+      <button type="button" class="job" data-job={c.id} style={`--c:${c.color}`} aria-pressed="false">
+        <span class="ic" aria-hidden="true">{c.icon}</span>
+        <span class="jn">{c.name[lang]}</span>
+        <span class="jt">{c.tagline[lang]}</span>
+        <span class="tick" aria-hidden="true">✓</span>
+      </button>
+    ))}
+  </div>
+
+  <p class="pick" data-jpick>👆 {s.pick}</p>
+
+  {careers.map((c) => (
+    <article class="shift" data-shift={c.id} data-lo={c.start[0]} data-hi={c.start[1]} style={`--c:${c.color}`} hidden>
+      <header>
+        <span class="ic big" aria-hidden="true">{c.icon}</span>
+        <div>
+          <h4>{c.name[lang]}</h4>
+          <p class="tags"><span>{s[c.sector]}</span><span>{fmt(c.years)}+ {s.years}</span></p>
+        </div>
+        <span class="medal" aria-hidden="true">{c.icon}</span>
+      </header>
+
+      <div class="guess">
+        <p class="gq"><strong>💰 {s.guessQ}</strong></p>
+        <div class="gin" data-gin>
+          <input type="range" min="2" max={SALARY_MAX} step="0.5" value="10" aria-label={s.guessQ} data-range />
+          <output data-gout>10</output> <span class="unit">{s.guessUnit}</span>
+          <button type="button" class="btn btn-primary" data-lock>{s.lock}</button>
+        </div>
+        <div class="money" data-money hidden>
+          <div class="axis">
+            <div class="lane"><span class="ll">{s.startLbl}</span>
+              <div class="track"><span class="rng start" style={`left:${pct(c.start[0])};width:calc(${pct(c.start[1])} - ${pct(c.start[0])})`}></span></div>
+              <span class="lv">{fmt(c.start[0])}–{fmt(c.start[1])} {s.unit}</span></div>
+            <div class="lane"><span class="ll">{s.midLbl}</span>
+              <div class="track"><span class="rng mid" style={`left:${pct(c.mid[0])};width:calc(${pct(c.mid[1])} - ${pct(c.mid[0])})`}></span></div>
+              <span class="lv">{fmt(c.mid[0])}–{fmt(c.mid[1])} {s.unit}</span></div>
+            <div class="lane"><span class="ll">{s.guessLbl}</span>
+              <div class="track"><span class="pin" data-pin></span></div>
+              <span class="lv" data-gval></span></div>
+          </div>
+          <p class="verdict" data-verdict></p>
+          <p class="note">{c.startNote[lang]}</p>
+          <p class="note"><strong>{s.bonus}:</strong> {c.bonus[lang]}</p>
+        </div>
+        <p class="hidden-money" data-hm>🔒 {s.hiddenMoney}</p>
+      </div>
+
+      <dl>
+        <div class="wide"><dt>{s.training}</dt><dd>{c.training[lang]}</dd></div>
+        <div class="wide"><dt>{s.day}</dt><dd>{c.day[lang]}</dd></div>
+        <div><dt>{s.outlook}</dt><dd>{c.outlook[lang]}</dd></div>
+        <div><dt>{s.hard}</dt><dd>{c.hard[lang]}</dd></div>
+      </dl>
+
+      <div class="sit" data-ans={c.scenario.answer}>
+        <p class="sq"><strong>🎬 {s.scenario}:</strong> {c.scenario.q[lang]}</p>
+        <div class="choices">
+          {c.scenario.options.map((o, i) => (
+            <button type="button" class="btn" data-choice={i}>{o[lang]}</button>
+          ))}
+        </div>
+        <p class="fb" data-fb hidden></p>
+        <p class="why" data-jwhy hidden>{s.earned}{c.scenario.why[lang]}</p>
+      </div>
+      <p class="src">{s.sources}: {c.sources.map((x, k) => (<>{k > 0 && ' · '}<a href={x.url} target="_blank" rel="noopener">{x.label}</a></>))}</p>
+    </article>
+  ))}
+
+  <section class="compare">
+    <h4>📊 {s.compareTitle}</h4>
+    <p class="locked" data-locked>🔒 {s.compareLocked}</p>
+    <div data-chart hidden>
+      <ul class="chart">
+        {byStart.map((c) => (
+          <li>
+            <span class="cn"><span aria-hidden="true">{c.icon}</span> {c.name[lang]}</span>
+            <span class="ctrack">
+              <span class="rng mid" style={`--c:${c.color};left:${pct(c.mid[0])};width:calc(${pct(c.mid[1])} - ${pct(c.mid[0])})`}></span>
+              <span class="rng start" style={`--c:${c.color};left:${pct(c.start[0])};width:calc(${pct(c.start[1])} - ${pct(c.start[0])})`}></span>
+            </span>
+            <span class="cv">{fmt(c.start[0])}–{fmt(c.start[1])} → {fmt(c.mid[0])}–{fmt(c.mid[1])}</span>
+          </li>
+        ))}
+      </ul>
+      <div class="ticks" aria-hidden="true"><span></span><span class="tk">{[0, 20, 40, SALARY_MAX].map((v) => (<span style={`left:${pct(v)}`}>{v}</span>))}</span><span></span></div>
+      <p class="note">{s.compareNote}</p>
+    </div>
+  </section>
+
+  <p class="done" data-jdone hidden>🏆 {s.done}</p>
+  <button type="button" class="btn reset" data-jreset>{s.reset}</button>
+  <template data-msgs data-exact={s.exact} data-close={s.close} data-far={s.far} data-wrong={s.wrong} data-guessed={s.youGuessed} data-unit={s.unit}></template>
+</div>
+
+<script>
+  const KEY = 'path.jobs';
+  type State = { guess: Record<string, number>; badges: string[] };
+  document.querySelectorAll<HTMLElement>('[data-jobsim]').forEach((root) => {
+    const total = Number(root.dataset.total);
+    const MAX = Number(root.dataset.max);
+    const m = root.querySelector<HTMLElement>('[data-msgs]')!.dataset;
+    let st: State = { guess: {}, badges: [] };
+    try { st = { ...st, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch {}
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch {} };
+    const jobs = [...root.querySelectorAll<HTMLButtonElement>('[data-job]')];
+    const shifts = [...root.querySelectorAll<HTMLElement>('[data-shift]')];
+    const fmt = (v: number) => (document.documentElement.lang === 'vi' ? String(v).replace('.', ',') : String(v));
+
+    const pointsFor = (g: number, lo: number, hi: number) => {
+      if (g >= lo && g <= hi) return 3;
+      const d = g < lo ? lo - g : g - hi;
+      return d <= Math.max(2, (lo + hi) / 2 * 0.3) ? 1 : 0;
+    };
+    function paint() {
+      let pts = 0;
+      shifts.forEach((sh) => {
+        const id = sh.dataset.shift!;
+        const lo = Number(sh.dataset.lo), hi = Number(sh.dataset.hi);
+        const g = st.guess[id];
+        const has = typeof g === 'number';
+        sh.querySelector<HTMLElement>('[data-money]')!.hidden = !has;
+        sh.querySelector<HTMLElement>('[data-hm]')!.hidden = has;
+        sh.querySelector<HTMLElement>('[data-gin]')!.hidden = has;
+        if (has) {
+          const p = pointsFor(g, lo, hi); pts += p;
+          const pin = sh.querySelector<HTMLElement>('[data-pin]')!;
+          pin.style.left = `${Math.min(100, (g / MAX) * 100)}%`;
+          sh.querySelector('[data-gval]')!.textContent = `${fmt(g)} ${m.unit}`;
+          const v = sh.querySelector<HTMLElement>('[data-verdict]')!;
+          v.textContent = `${m.guessed} ${fmt(g)} ${m.unit} — ${p === 3 ? m.exact : p === 1 ? m.close : m.far}`;
+          v.className = `verdict p${p}`;
+        }
+        const got = st.badges.includes(id);
+        sh.classList.toggle('got', got);
+        sh.querySelector<HTMLElement>('[data-jwhy]')!.hidden = !got;
+        if (got) sh.querySelector<HTMLElement>('[data-fb]')!.hidden = true;
+        const ans = sh.querySelector<HTMLElement>('.sit')!.dataset.ans;
+        sh.querySelectorAll<HTMLButtonElement>('[data-choice]').forEach((b) => {
+          if (got) { b.disabled = true; b.classList.toggle('right', b.dataset.choice === ans); }
+        });
+      });
+      root.querySelectorAll<HTMLElement>('[data-badge]').forEach((b) => b.classList.toggle('got', st.badges.includes(b.dataset.badge!)));
+      jobs.forEach((j) => j.classList.toggle('visited', st.badges.includes(j.dataset.job!)));
+      root.querySelector('[data-nbadge]')!.textContent = String(st.badges.length);
+      root.querySelector('[data-points]')!.textContent = String(pts);
+      const unlocked = st.badges.length >= 3;
+      root.querySelector<HTMLElement>('[data-chart]')!.hidden = !unlocked;
+      root.querySelector<HTMLElement>('[data-locked]')!.hidden = unlocked;
+      root.querySelector<HTMLElement>('[data-jdone]')!.hidden = st.badges.length < total;
+    }
+    function open(id: string) {
+      jobs.forEach((j) => j.setAttribute('aria-pressed', String(j.dataset.job === id)));
+      shifts.forEach((sh) => (sh.hidden = sh.dataset.shift !== id));
+      root.querySelector<HTMLElement>('[data-jpick]')!.hidden = true;
+      const sh = shifts.find((x) => x.dataset.shift === id)!;
+      sh.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+    }
+    jobs.forEach((j) => j.addEventListener('click', () => open(j.dataset.job!)));
+
+    shifts.forEach((sh) => {
+      const id = sh.dataset.shift!;
+      const range = sh.querySelector<HTMLInputElement>('[data-range]')!;
+      const out = sh.querySelector<HTMLOutputElement>('[data-gout]')!;
+      range.addEventListener('input', () => { out.textContent = fmt(Number(range.value)); });
+      sh.querySelector('[data-lock]')!.addEventListener('click', () => { st.guess[id] = Number(range.value); save(); paint(); });
+      const sit = sh.querySelector<HTMLElement>('.sit')!;
+      const fb = sh.querySelector<HTMLElement>('[data-fb]')!;
+      sh.querySelectorAll<HTMLButtonElement>('[data-choice]').forEach((b) => b.addEventListener('click', () => {
+        if (b.dataset.choice === sit.dataset.ans) {
+          if (!st.badges.includes(id)) st.badges.push(id);
+          save(); paint();
+          sh.classList.add('just'); setTimeout(() => sh.classList.remove('just'), 900);
+        } else {
+          b.classList.add('wrong'); b.disabled = true; fb.textContent = m.wrong!; fb.hidden = false;
+        }
+      }));
+    });
+
+    root.querySelector('[data-jreset]')!.addEventListener('click', () => {
+      st = { guess: {}, badges: [] }; save();
+      root.querySelectorAll<HTMLButtonElement>('[data-choice]').forEach((b) => { b.disabled = false; b.classList.remove('wrong', 'right'); });
+      root.querySelectorAll<HTMLElement>('[data-fb]').forEach((f) => (f.hidden = true));
+      paint();
+    });
+    paint();
+  });
+</script>
+
+<style>
+  .top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+  .top > div:first-child { flex: 1 1 280px; min-width: 0; }
+  .intro { color: var(--text-soft); margin: 0; }
+  .score { flex: 0 0 auto; padding: 0.8rem 1rem; border-radius: 12px; background: var(--bg-soft); border: 1px solid var(--border); display: grid; gap: 0.5rem; justify-items: center; }
+  .sc-title { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; color: var(--text-soft); }
+  .badges { display: grid; grid-template-columns: repeat(6, 32px); gap: 5px; }
+  .badge { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 1rem; border: 1.5px dashed var(--border); filter: grayscale(1); opacity: 0.35; transition: all 0.3s ease; }
+  .badge.got { filter: none; opacity: 1; border: 2.5px solid var(--c); background: var(--surface); }
+  .sc-line { font-size: 0.8rem; color: var(--text-soft); }
+  .sc-line b { color: var(--text); }
+  .jobs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.6rem; margin-top: 1.2rem; }
+  .job { position: relative; display: grid; gap: 0.15rem; text-align: left; padding: 0.8rem; border-radius: 12px; border: 1.5px solid var(--border); border-left: 5px solid var(--c);
+    background: var(--bg); color: var(--text); font: inherit; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease; }
+  .job:hover { transform: translateY(-2px); border-color: var(--c); }
+  .job[aria-pressed='true'] { border-color: var(--c); box-shadow: var(--shadow); }
+  .ic { font-size: 1.6rem; line-height: 1; }
+  .jn { font-weight: 700; }
+  .jt { font-size: 0.8rem; color: var(--text-soft); line-height: 1.35; }
+  .tick { position: absolute; top: 0.5rem; right: 0.6rem; width: 22px; height: 22px; border-radius: 50%; background: var(--c); color: #fff; font-size: 0.75rem; display: none; place-items: center; }
+  .job.visited .tick { display: grid; }
+  .pick { text-align: center; color: var(--text-soft); margin: 1.2rem 0 0.4rem; }
+  .shift { margin-top: 1.2rem; border-radius: 16px; border: 2px solid var(--c); background: var(--bg); padding: 1rem 1.2rem; scroll-margin-top: 5rem; }
+  .shift header { display: flex; align-items: center; gap: 0.8rem; border-bottom: 1px dashed var(--border); padding-bottom: 0.7rem; }
+  .ic.big { font-size: 2.4rem; }
+  .shift h4 { margin: 0; font-family: var(--font-head); font-size: 1.4rem; }
+  .tags { margin: 0.2rem 0 0; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .tags span { font-size: 0.75rem; font-weight: 600; padding: 0.1rem 0.55rem; border-radius: 999px; background: var(--bg-soft); color: var(--text-soft); }
+  .medal { margin-left: auto; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-size: 1.5rem; border: 3px solid var(--c); background: var(--surface); opacity: 0; transform: scale(0.6); transition: all 0.3s ease; }
+  .shift.got .medal { opacity: 1; transform: scale(1); }
+  .shift.just .medal { animation: pop 0.6s ease; }
+  @keyframes pop { 0% { transform: scale(2); opacity: 0; } 60% { transform: scale(0.9); opacity: 1; } 100% { transform: scale(1); } }
+  .guess { margin: 0.9rem 0; padding: 0.8rem 1rem; border-radius: 12px; background: var(--bg-soft); }
+  .gq { margin: 0 0 0.5rem; }
+  .gin { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.8rem; }
+  .gin input { flex: 1 1 220px; accent-color: var(--c); height: 28px; }
+  .gin output { font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; min-width: 2.5ch; text-align: right; }
+  .unit { font-size: 0.85rem; color: var(--text-soft); }
+  .hidden-money { margin: 0.6rem 0 0; font-size: 0.88rem; color: var(--text-soft); }
+  .axis { display: grid; gap: 0.45rem; }
+  .lane { display: grid; grid-template-columns: 7.5rem 1fr 5.5rem; gap: 0.6rem; align-items: center; font-size: 0.85rem; }
+  .ll { color: var(--text-soft); }
+  .lv { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+  .track, .ctrack { position: relative; height: 14px; border-radius: 99px; background: var(--surface); border: 1px solid var(--border); }
+  .rng { position: absolute; top: 0; bottom: 0; border-radius: 99px; background: var(--c); }
+  .rng.mid { opacity: 0.35; }
+  .pin { position: absolute; top: -4px; width: 4px; height: 20px; margin-left: -2px; border-radius: 2px; background: var(--text); }
+  .verdict { margin: 0.7rem 0 0.3rem; font-weight: 700; }
+  .verdict.p3 { color: var(--good); } .verdict.p1 { color: var(--warm); } .verdict.p0 { color: var(--text-soft); }
+  .note { font-size: 0.88rem; color: var(--text-soft); margin: 0.35rem 0 0; }
+  dl { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; margin: 0.9rem 0; }
+  dl .wide { grid-column: 1 / -1; }
+  dt { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c); }
+  dd { margin: 0.15rem 0 0; font-size: 0.95rem; }
+  .sit { background: var(--bg-soft); border-radius: 12px; padding: 0.8rem 1rem; }
+  .sq { margin: 0 0 0.6rem; }
+  .choices { display: grid; gap: 0.4rem; }
+  .choices .btn { justify-content: flex-start; text-align: left; border-radius: 12px; min-height: 44px; font-size: 0.92rem; font-weight: 500; }
+  .choices .btn.right, .choices .btn.right:disabled { background: var(--good); border-color: var(--good); color: #fff; opacity: 1; }
+  .choices .btn.wrong { text-decoration: line-through; }
+  .fb { margin: 0.6rem 0 0; color: var(--bad); font-size: 0.92rem; }
+  .why { margin: 0.6rem 0 0; color: var(--good); font-weight: 600; font-size: 0.95rem; }
+  .src { font-size: 0.78rem; color: var(--text-soft); margin: 0.8rem 0 0; }
+  .compare { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px dashed var(--border); }
+  .compare h4 { font-family: var(--font-head); font-size: 1.15rem; margin: 0 0 0.5rem; }
+  .locked { color: var(--text-soft); font-size: 0.92rem; margin: 0; }
+  .chart { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.45rem; }
+  .chart li { display: grid; grid-template-columns: 11rem 1fr 8.5rem; gap: 0.6rem; align-items: center; font-size: 0.85rem; }
+  .cn { font-weight: 600; }
+  .cv { color: var(--text-soft); font-variant-numeric: tabular-nums; text-align: right; }
+  .ticks { display: grid; grid-template-columns: 11rem 1fr 8.5rem; gap: 0.6rem; margin-top: 0.3rem; font-size: 0.72rem; color: var(--text-soft); }
+  .tk { position: relative; height: 1rem; }
+  .tk span { position: absolute; transform: translateX(-50%); }
+  .tk span:first-child { transform: none; } .tk span:last-child { transform: translateX(-100%); }
+  .done { margin: 1.2rem 0 0; padding: 0.9rem 1.1rem; border-radius: 12px; background: var(--accent-soft); font-weight: 600; }
+  .reset { margin-top: 1rem; font-size: 0.85rem; min-height: 36px; }
+  @media (max-width: 600px) {
+    .jobs { grid-template-columns: 1fr 1fr; } .jt { display: none; }
+    dl { grid-template-columns: 1fr; }
+    .lane { grid-template-columns: 1fr 5rem; } .lane .track { grid-column: 1 / -1; grid-row: 2; }
+    .chart li { grid-template-columns: 1fr auto; } .chart .ctrack { grid-column: 1 / -1; grid-row: 2; }
+    .ticks { grid-template-columns: 1fr; } .ticks > span:not(.tk) { display: none; }
+    .badges { grid-template-columns: repeat(6, 28px); } .badge { width: 28px; height: 28px; font-size: 0.85rem; }
+  }
+</style>

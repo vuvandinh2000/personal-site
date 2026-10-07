@@ -1,0 +1,285 @@
+---
+/**
+ * "Campus tour" mini-game: set your expected exam score, visit universities,
+ * see where your score sits against last year's cut-offs, and answer one question
+ * to collect each school's student card. Progress is saved on the device.
+ */
+import { unis } from '../../data/universities';
+import type { Lang } from '../../i18n/ui';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = {
+  en: {
+    label: 'Mini-game', title: 'Campus tour', intro: 'Set the score you expect, visit a campus, see where you stand, then answer one question to collect its student card.',
+    cards: 'Student cards', myScore: 'The exam score I am aiming for (out of 30)',
+    pick: 'Pick a university to start the tour.', founded: 'Founded',
+    knownFor: 'Known for', vibe: 'Student life', cutoff: 'Cut-off scores', tuition: 'Tuition', methods: 'Ways to get in', fun: 'Fun fact',
+    gauge: 'Your score vs. last year', you: 'You',
+    above: 'Above even the highest cut-off last year — still aim a little higher to be safe, since scores move every year.',
+    many: 'Many programmes here are within reach.',
+    some: 'Some of the lower-scoring programmes are within reach.',
+    below: (d: string) => `About ${d} points below the lowest cut-off. You still have the whole year — or look at other admission methods.`,
+    own: 'This school uses its own formula, so the gauge does not apply.',
+    quizQ: 'Collect the card', got: 'Card collected! ', wrong: 'Not quite — read the card again and try another answer.',
+    collected: 'Collected', sources: 'Sources',
+    done: 'You visited every campus! Which one felt most like “you” — and is it the school, or the major inside it, that you really want?',
+    reset: 'Reset tour',
+  },
+  vi: {
+    label: 'Trò chơi', title: 'Dạo quanh giảng đường', intro: 'Đặt mức điểm em đang nhắm tới, ghé thăm một trường, xem mình đang đứng ở đâu, rồi trả lời một câu hỏi để nhận thẻ sinh viên của trường.',
+    cards: 'Thẻ sinh viên', myScore: 'Điểm thi em đang nhắm tới (thang 30)',
+    pick: 'Chọn một trường để bắt đầu chuyến tham quan.', founded: 'Thành lập',
+    knownFor: 'Mạnh về', vibe: 'Đời sống sinh viên', cutoff: 'Điểm chuẩn', tuition: 'Học phí', methods: 'Cách xét tuyển', fun: 'Chuyện thú vị',
+    gauge: 'Điểm của em so với năm ngoái', you: 'Em',
+    above: 'Cao hơn cả ngành cao nhất năm ngoái — vẫn nên nhắm cao hơn một chút cho an toàn, vì điểm chuẩn thay đổi mỗi năm.',
+    many: 'Nhiều ngành ở trường này nằm trong tầm với.',
+    some: 'Một số ngành điểm thấp hơn nằm trong tầm với.',
+    below: (d: string) => `Còn cách ngành thấp nhất khoảng ${d} điểm. Em còn cả một năm để cố gắng — hoặc xem thêm các phương thức xét tuyển khác.`,
+    own: 'Trường này tính điểm theo công thức riêng nên không so trực tiếp được.',
+    quizQ: 'Nhận thẻ', got: 'Đã nhận thẻ! ', wrong: 'Chưa đúng — đọc lại thông tin rồi chọn đáp án khác nhé.',
+    collected: 'Đã có thẻ', sources: 'Nguồn',
+    done: 'Em đã ghé hết các trường! Trường nào làm em thấy “đúng là mình” nhất — và thứ em thật sự muốn là cái tên trường, hay ngành học bên trong nó?',
+    reset: 'Đi lại từ đầu',
+  },
+}[lang];
+const LO = 15, HI = 30;
+const pct = (v: number) => `${(((v - LO) / (HI - LO)) * 100).toFixed(1)}%`;
+const fmt = (v: number) => (lang === 'vi' ? String(v).replace('.', ',') : String(v));
+const total = unis.length;
+---
+<div class="widget campus" data-campus data-total={total} data-lo={LO} data-hi={HI}>
+  <div class="top">
+    <div>
+      <span class="widget-label">{s.label}</span>
+      <h3>{s.title}</h3>
+      <p class="intro">{s.intro}</p>
+    </div>
+    <div class="wallet" aria-live="polite">
+      <span class="w-title">{s.cards}</span>
+      <div class="slots">
+        {unis.map((u) => (<span class="slot" data-uslot={u.id} style={`--c:${u.color}`} title={u.name[lang]}>{u.abbr}</span>))}
+      </div>
+      <span class="w-count"><b data-ucount>0</b>/{total}</span>
+    </div>
+  </div>
+
+  <label class="myscore">
+    <span>🎯 {s.myScore}</span>
+    <span class="ms-row">
+      <input type="range" min={LO} max={HI} step="0.25" value="24" data-myscore />
+      <output data-myscore-out>24</output>
+    </span>
+  </label>
+
+  <div class="campuses">
+    {unis.map((u) => (
+      <button type="button" class="uni" data-uni={u.id} style={`--c:${u.color}`} aria-pressed="false">
+        <span class="crest">{u.abbr}</span>
+        <span class="un">{u.name[lang]}</span>
+        <span class="up">{u.place[lang]}</span>
+        <span class="tick" aria-hidden="true">✓</span>
+      </button>
+    ))}
+  </div>
+
+  <p class="pick" data-upick>🏫 {s.pick}</p>
+
+  {unis.map((u) => (
+    <article class="card" data-ucard={u.id} data-min={u.cutoff?.[0] ?? ''} data-max={u.cutoff?.[1] ?? ''} style={`--c:${u.color}`} hidden>
+      <header>
+        <span class="crest big">{u.abbr}</span>
+        <div>
+          <h4>{u.name[lang]}</h4>
+          <p class="meta">{u.place[lang]} · {s.founded} {u.founded}</p>
+        </div>
+        <span class="stamp">{s.collected}</span>
+      </header>
+
+      <div class="gauge">
+        <p class="g-title">{s.gauge}</p>
+        {u.cutoff ? (
+          <>
+            <div class="g-track">
+              <span class="g-range" style={`left:${pct(u.cutoff[0])};width:calc(${pct(u.cutoff[1])} - ${pct(u.cutoff[0])})`}></span>
+              <span class="g-pin" data-gpin><span>{s.you}</span></span>
+            </div>
+            <div class="g-scale" aria-hidden="true"><span style={`left:${pct(u.cutoff[0])}`}>{fmt(u.cutoff[0])}</span><span style={`left:${pct(u.cutoff[1])}`}>{fmt(u.cutoff[1])}</span></div>
+            <p class="g-verdict" data-gverdict></p>
+          </>
+        ) : (
+          <p class="g-verdict">{s.own}</p>
+        )}
+      </div>
+
+      <dl>
+        <div class="wide"><dt>{s.knownFor}</dt><dd>{u.knownFor[lang]}</dd></div>
+        <div><dt>{s.cutoff}</dt><dd>{u.cutoffText[lang]}</dd></div>
+        <div><dt>{s.tuition}</dt><dd>{u.tuition[lang]}</dd></div>
+        <div><dt>{s.methods}</dt><dd>{u.methods[lang]}</dd></div>
+        <div><dt>{s.vibe}</dt><dd>{u.vibe[lang]}</dd></div>
+        <div class="wide fun"><dt>{s.fun}</dt><dd>{u.funFact[lang]}</dd></div>
+      </dl>
+
+      <div class="uq" data-uans={u.quiz.answer}>
+        <p class="qq"><strong>{s.quizQ}:</strong> {u.quiz.q[lang]}</p>
+        <div class="opts">
+          {u.quiz.options.map((o, i) => (<button type="button" class="btn" data-uopt={i}>{o[lang]}</button>))}
+        </div>
+        <p class="fb" data-ufb hidden></p>
+        <p class="why" data-uwhy hidden>{s.got}{u.quiz.why[lang]}</p>
+      </div>
+      <p class="src">{s.sources}: {u.sources.map((x, k) => (<>{k > 0 && ' · '}<a href={x.url} target="_blank" rel="noopener">{x.label}</a></>))}</p>
+    </article>
+  ))}
+
+  <p class="done" data-udone hidden>🎓 {s.done}</p>
+  <button type="button" class="btn reset" data-ureset>{s.reset}</button>
+  <template data-umsgs data-above={s.above} data-many={s.many} data-some={s.some} data-below={s.below('{d}')} data-wrong={s.wrong}></template>
+</div>
+
+<script>
+  const KEY = 'path.campus';
+  const SCORE_KEY = 'path.myScore';
+  document.querySelectorAll<HTMLElement>('[data-campus]').forEach((root) => {
+    const total = Number(root.dataset.total);
+    const LO = Number(root.dataset.lo), HI = Number(root.dataset.hi);
+    const m = root.querySelector<HTMLElement>('[data-umsgs]')!.dataset;
+    const vi = document.documentElement.lang === 'vi';
+    const fmt = (v: number) => (vi ? String(v).replace('.', ',') : String(v));
+    let cards: string[] = [];
+    try { cards = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch {}
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(cards)); } catch {} };
+    const range = root.querySelector<HTMLInputElement>('[data-myscore]')!;
+    const out = root.querySelector<HTMLOutputElement>('[data-myscore-out]')!;
+    try { const v = localStorage.getItem(SCORE_KEY); if (v) range.value = v; } catch {}
+    const unisBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-uni]')];
+    const cardsEl = [...root.querySelectorAll<HTMLElement>('[data-ucard]')];
+
+    function paintGauges() {
+      const sc = Number(range.value);
+      out.textContent = fmt(sc);
+      cardsEl.forEach((c) => {
+        if (!c.dataset.min) return;
+        const mn = Number(c.dataset.min), mx = Number(c.dataset.max);
+        c.querySelector<HTMLElement>('[data-gpin]')!.style.left = `${((sc - LO) / (HI - LO)) * 100}%`;
+        const v = c.querySelector<HTMLElement>('[data-gverdict]')!;
+        let txt: string, cls: string;
+        if (sc >= mx) { txt = m.above!; cls = 'ok'; }
+        else if (sc >= (mn + mx) / 2) { txt = m.many!; cls = 'ok'; }
+        else if (sc >= mn) { txt = m.some!; cls = 'mid'; }
+        else { txt = m.below!.replace('{d}', fmt(Math.round((mn - sc) * 100) / 100)); cls = 'low'; }
+        v.textContent = txt; v.className = `g-verdict ${cls}`;
+      });
+    }
+    function paintCards() {
+      cardsEl.forEach((c) => {
+        const got = cards.includes(c.dataset.ucard!);
+        c.classList.toggle('got', got);
+        c.querySelector<HTMLElement>('[data-uwhy]')!.hidden = !got;
+        if (got) c.querySelector<HTMLElement>('[data-ufb]')!.hidden = true;
+        const ans = c.querySelector<HTMLElement>('.uq')!.dataset.uans;
+        c.querySelectorAll<HTMLButtonElement>('[data-uopt]').forEach((b) => { if (got) { b.disabled = true; b.classList.toggle('right', b.dataset.uopt === ans); } });
+      });
+      root.querySelectorAll<HTMLElement>('[data-uslot]').forEach((sl) => sl.classList.toggle('got', cards.includes(sl.dataset.uslot!)));
+      unisBtns.forEach((b) => b.classList.toggle('visited', cards.includes(b.dataset.uni!)));
+      root.querySelector('[data-ucount]')!.textContent = String(cards.length);
+      root.querySelector<HTMLElement>('[data-udone]')!.hidden = cards.length < total;
+    }
+    range.addEventListener('input', () => { try { localStorage.setItem(SCORE_KEY, range.value); } catch {} paintGauges(); });
+
+    function open(id: string) {
+      unisBtns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.uni === id)));
+      cardsEl.forEach((c) => (c.hidden = c.dataset.ucard !== id));
+      root.querySelector<HTMLElement>('[data-upick]')!.hidden = true;
+      cardsEl.find((c) => c.dataset.ucard === id)!.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+    }
+    unisBtns.forEach((b) => b.addEventListener('click', () => open(b.dataset.uni!)));
+
+    cardsEl.forEach((c) => {
+      const q = c.querySelector<HTMLElement>('.uq')!;
+      const fb = c.querySelector<HTMLElement>('[data-ufb]')!;
+      c.querySelectorAll<HTMLButtonElement>('[data-uopt]').forEach((b) => b.addEventListener('click', () => {
+        if (b.dataset.uopt === q.dataset.uans) {
+          if (!cards.includes(c.dataset.ucard!)) cards.push(c.dataset.ucard!);
+          save(); paintCards();
+          c.classList.add('just'); setTimeout(() => c.classList.remove('just'), 900);
+        } else {
+          b.classList.add('wrong'); b.disabled = true; fb.textContent = m.wrong!; fb.hidden = false;
+        }
+      }));
+    });
+    root.querySelector('[data-ureset]')!.addEventListener('click', () => {
+      cards = []; save();
+      root.querySelectorAll<HTMLButtonElement>('[data-uopt]').forEach((b) => { b.disabled = false; b.classList.remove('wrong', 'right'); });
+      root.querySelectorAll<HTMLElement>('[data-ufb]').forEach((f) => (f.hidden = true));
+      paintCards();
+    });
+    paintGauges(); paintCards();
+  });
+</script>
+
+<style>
+  .top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+  .top > div:first-child { flex: 1 1 280px; min-width: 0; }
+  .intro { color: var(--text-soft); margin: 0; }
+  .wallet { flex: 0 0 auto; padding: 0.8rem 1rem; border-radius: 12px; background: #3b2f2a; color: #f3e6c4; display: grid; gap: 0.5rem; justify-items: center; }
+  .w-title { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; }
+  .slots { display: grid; grid-template-columns: repeat(5, 44px); gap: 5px; }
+  .slot { height: 26px; border-radius: 5px; border: 1.5px dashed rgb(243 230 196 / 0.4); display: grid; place-items: center; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.02em; color: rgb(243 230 196 / 0.4); transition: all 0.3s ease; }
+  .slot.got { border: 1.5px solid var(--c); background: var(--c); color: #fff; }
+  .w-count { font-size: 0.8rem; }
+  .myscore { display: grid; gap: 0.3rem; margin: 1.2rem 0 0; padding: 0.8rem 1rem; border-radius: 12px; background: var(--accent-soft); font-weight: 600; font-size: 0.95rem; }
+  .ms-row { display: flex; align-items: center; gap: 0.8rem; }
+  .ms-row input { flex: 1; accent-color: var(--accent); height: 28px; }
+  .ms-row output { font-weight: 800; font-size: 1.4rem; min-width: 3.2ch; text-align: right; font-variant-numeric: tabular-nums; }
+  .campuses { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.6rem; margin-top: 1rem; }
+  .uni { position: relative; display: grid; gap: 0.25rem; justify-items: start; text-align: left; padding: 0.8rem; border-radius: 12px; border: 1.5px solid var(--border);
+    background: var(--bg); color: var(--text); font: inherit; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease; }
+  .uni:hover { transform: translateY(-2px); border-color: var(--c); }
+  .uni[aria-pressed='true'] { border-color: var(--c); box-shadow: var(--shadow); }
+  .crest { display: inline-grid; place-items: center; min-width: 48px; height: 28px; padding: 0 0.4rem; border-radius: 6px; background: var(--c); color: #fff; font-weight: 800; font-size: 0.78rem; letter-spacing: 0.04em; }
+  .un { font-weight: 700; line-height: 1.3; }
+  .up { font-size: 0.78rem; color: var(--text-soft); }
+  .tick { position: absolute; top: 0.5rem; right: 0.6rem; width: 22px; height: 22px; border-radius: 50%; background: var(--c); color: #fff; font-size: 0.75rem; display: none; place-items: center; }
+  .uni.visited .tick { display: grid; }
+  .pick { text-align: center; color: var(--text-soft); margin: 1.2rem 0 0.4rem; }
+  .card { margin-top: 1.2rem; border-radius: 16px; border: 1.5px solid var(--border); border-top: 10px solid var(--c); background: var(--bg); padding: 1rem 1.2rem; scroll-margin-top: 5rem; }
+  .card header { display: flex; align-items: center; gap: 0.8rem; border-bottom: 1px dashed var(--border); padding-bottom: 0.7rem; }
+  .crest.big { min-width: 64px; height: 40px; font-size: 1rem; }
+  .card h4 { margin: 0; font-family: var(--font-head); font-size: 1.3rem; line-height: 1.25; }
+  .meta { margin: 0.15rem 0 0; font-size: 0.85rem; color: var(--text-soft); }
+  .stamp { margin-left: auto; padding: 0.25rem 0.7rem; border: 3px solid var(--c); color: var(--c); border-radius: 8px; font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.08em; transform: rotate(-10deg); opacity: 0; transition: opacity 0.3s ease; white-space: nowrap; }
+  .card.got .stamp { opacity: 1; }
+  .card.just .stamp { animation: thump 0.6s ease; }
+  @keyframes thump { 0% { transform: rotate(-10deg) scale(2.2); opacity: 0; } 60% { transform: rotate(-10deg) scale(0.9); opacity: 1; } 100% { transform: rotate(-10deg) scale(1); } }
+  .gauge { margin: 0.9rem 0; padding: 0.8rem 1rem; border-radius: 12px; background: var(--bg-soft); }
+  .g-title { margin: 0 0 1.6rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c); }
+  .g-track { position: relative; height: 14px; border-radius: 99px; background: var(--surface); border: 1px solid var(--border); }
+  .g-range { position: absolute; top: 0; bottom: 0; border-radius: 99px; background: var(--c); opacity: 0.55; }
+  .g-pin { position: absolute; top: -6px; width: 4px; height: 24px; margin-left: -2px; border-radius: 2px; background: var(--text); transition: left 0.15s ease; }
+  .g-pin span { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); font-size: 0.72rem; font-weight: 800; white-space: nowrap; }
+  .g-scale { position: relative; height: 1.1rem; font-size: 0.72rem; color: var(--text-soft); margin-top: 0.3rem; }
+  .g-scale span { position: absolute; transform: translateX(-50%); }
+  .g-scale span:first-child { transform: translateX(-70%); } .g-scale span:last-child { transform: translateX(-30%); }
+  .g-verdict { margin: 0.6rem 0 0; font-weight: 600; font-size: 0.95rem; }
+  .g-verdict.ok { color: var(--good); } .g-verdict.mid { color: var(--warm); } .g-verdict.low { color: var(--bad); }
+  dl { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; margin: 0.9rem 0; }
+  dl .wide { grid-column: 1 / -1; }
+  dt { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c); }
+  dd { margin: 0.15rem 0 0; font-size: 0.95rem; }
+  .fun dd { font-style: italic; }
+  .uq { background: var(--bg-soft); border-radius: 12px; padding: 0.8rem 1rem; }
+  .qq { margin: 0 0 0.6rem; }
+  .opts { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .opts .btn { min-height: 40px; font-size: 0.9rem; }
+  .opts .btn.right, .opts .btn.right:disabled { background: var(--good); border-color: var(--good); color: #fff; opacity: 1; }
+  .opts .btn.wrong { text-decoration: line-through; }
+  .fb { margin: 0.6rem 0 0; color: var(--bad); font-size: 0.92rem; }
+  .why { margin: 0.6rem 0 0; color: var(--good); font-weight: 600; font-size: 0.95rem; }
+  .src { font-size: 0.78rem; color: var(--text-soft); margin: 0.8rem 0 0; }
+  .done { margin: 1.2rem 0 0; padding: 0.9rem 1.1rem; border-radius: 12px; background: var(--accent-soft); font-weight: 600; }
+  .reset { margin-top: 1rem; font-size: 0.85rem; min-height: 36px; }
+  @media (max-width: 560px) { dl { grid-template-columns: 1fr; } .slots { grid-template-columns: repeat(5, 40px); } .campuses { grid-template-columns: 1fr 1fr; } .up { display: none; } .un { font-size: 0.9rem; }
+    .card { position: relative; } .card header { flex-wrap: wrap; } .card h4 { font-size: 1.15rem; }
+    .stamp { position: absolute; top: 0.9rem; right: 0.8rem; font-size: 0.65rem; } }
+</style>

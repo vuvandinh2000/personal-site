@@ -223,8 +223,8 @@ export const destinations: Destination[] = [
       vi: 'Một số trường đại học có chương trình dạy bằng tiếng Anh, học phí thấp hơn Tây Âu.',
     },
     work: {
-      en: 'Newer markets have fewer experienced agencies — check the licence on dolab.gov.vn even more carefully.',
-      vi: 'Thị trường mới nên ít công ty có kinh nghiệm — càng phải kiểm tra giấy phép trên dolab.gov.vn thật kỹ.',
+      en: 'Newer markets have fewer experienced agencies — check the licence on dolab.moha.gov.vn even more carefully.',
+      vi: 'Thị trường mới nên ít công ty có kinh nghiệm — càng phải kiểm tra giấy phép trên dolab.moha.gov.vn thật kỹ.',
     },
     language: { en: 'Basic English; the local language helps', vi: 'Tiếng Anh cơ bản; biết tiếng bản địa là lợi thế' },
     money: { en: 'Usually about USD 800–1,200/month', vi: 'Thường khoảng 800–1.200 USD/tháng' },
@@ -234,7 +234,7 @@ export const destinations: Destination[] = [
     },
     quiz: {
       q: { en: 'What should you do first with an agency offering jobs in a new European market?', vi: 'Với một công ty mời đi làm ở thị trường châu Âu mới, việc đầu tiên nên làm là gì?' },
-      options: [{ en: 'Pay a deposit quickly', vi: 'Đặt cọc thật nhanh' }, { en: 'Check its licence on dolab.gov.vn', vi: 'Kiểm tra giấy phép trên dolab.gov.vn' }, { en: 'Trust its Facebook reviews', vi: 'Tin các đánh giá trên Facebook' }],
+      options: [{ en: 'Pay a deposit quickly', vi: 'Đặt cọc thật nhanh' }, { en: 'Check its licence on dolab.moha.gov.vn', vi: 'Kiểm tra giấy phép trên dolab.moha.gov.vn' }, { en: 'Trust its Facebook reviews', vi: 'Tin các đánh giá trên Facebook' }],
       answer: 1,
       why: { en: 'Only licensed companies may send workers abroad.', vi: 'Chỉ doanh nghiệp được cấp phép mới được đưa người lao động ra nước ngoài.' },
     },
